@@ -5,7 +5,7 @@
  *   several copies of the same edition, or several editions of the same
  *   album, are allowed.
  * - A Wishlist record (wanted) is an album, whatever the edition: it has no
- *   edition details (see toAlbum()).
+ *   edition details, only the format wanted, Vinyl by default (see toAlbum()).
  *
  * source = { provider, id, groupId }: the data source that found the record,
  * its identifier for the edition (id) and for the album (groupId:
@@ -87,15 +87,21 @@ export function validateRecord(input) {
   return record;
 }
 
+/** Format wanted for a Wishlist album unless stated otherwise (see toAlbum). */
+export const WANTED_FORMAT = 'Vinyl';
+
 /**
  * Album-level data of a candidate, for the Wishlist: the details of the
  * edition that happened to be clicked (year, format, label, catalogue
  * number, barcode, country, edition id) are left out on purpose.
+ * format holds the format wanted (a family such as 'Vinyl'), not the
+ * clicked edition's; '' (older records) means any format.
  */
-export function toAlbum(candidate) {
+export function toAlbum(candidate, format = WANTED_FORMAT) {
   return {
     title: candidate.title,
     artist: candidate.artist,
+    format,
     coverUrls: candidate.coverUrls,
     source: { provider: candidate.source?.provider, id: '', groupId: candidate.source?.groupId },
   };

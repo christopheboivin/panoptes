@@ -5,11 +5,11 @@
 
 import { APP_VERSION, DISCOGS_TOKEN_PAGE, OCR_MIN_CONFIDENCE } from './config.js';
 import * as db from './storage/db.js';
-import { createLibrary, STATUS } from './storage/library.js';
+import { createLibrary, countByStatus, STATUS } from './storage/library.js';
 import { createSettings } from './storage/settings.js';
 import { findRelations, isCertain } from './models/match.js';
 import {
-  groupByAlbum, sortEditions, filterOptions, filterEditions,
+  groupByAlbum, sortEditions, filterOptions, filterEditions, vinylFirst, countVinyl,
 } from './models/editions.js';
 import { createMusicBrainzProvider } from './providers/musicbrainz.js';
 import { createDiscogsProvider } from './providers/discogs.js';
@@ -22,7 +22,7 @@ import { onOcrProgress, releaseOcr } from './scanner/ocr-engine.js';
 import { extractCatalogNumbers, mergeSuggestions, bestSuggestion } from './models/catno.js';
 import { readBarcodeFromImage } from './scanner/barcode-engine.js';
 import {
-  renderLibrary, renderCandidates, renderAlbums, renderEditions, renderFilterOptions,
+  renderLibrary, renderCandidates, renderAlbums, renderEditions, renderFilterOptions, ownedAlbumQuestion,
 } from './ui/render.js';
 
 const library = createLibrary(db);
@@ -118,6 +118,7 @@ function renderCandidateList() {
     const items = state.albums.map(({ album, editions }) => ({
       album,
       editionCount: editions.length,
+      vinylCount: countVinyl(editions),
       relations: findRelations(album, state.records),
       canPick: catalog.canListEditions(album),
     }));
@@ -197,7 +198,8 @@ async function runSearch(label, search, mode = RESULTS.EDITIONS) {
   try {
     const result = await search();
     if (id !== searchId) return null;
-    state.candidates = result.candidates;
+    // Vinyl first (albums with a vinyl edition too, as albums keep the order of their first edition).
+    state.candidates = vinylFirst(result.candidates);
     state.candidatesSource = result.providerName ?? '';
     renderCandidateList();
     const count = mode === RESULTS.ALBUMS ? state.albums.length : result.candidates.length;
@@ -533,7 +535,9 @@ async function addToLibrary(candidate, status) {
   const scanned = normalizeBarcode(els.searchForm.elements.barcode.value);
   const data = status === STATUS.OWNED && !candidate.barcode && scanned ? { ...candidate, barcode: scanned } : candidate;
   // Computed before adding: the new record must not count as a match of itself.
-  const { wanted } = findRelations(data, state.records);
+  const { copies, otherEditions, wanted } = findRelations(data, state.records);
+  const owned = [...copies, ...otherEditions];
+  if (status === STATUS.WANTED && owned.length > 0 && !window.confirm(ownedAlbumQuestion(data, owned))) return;
   try {
     const record = await library.add(data, status);
     toast(`“${record.title}” added to your ${status === STATUS.OWNED ? 'collection' : 'wishlist'}.`);
@@ -604,15 +608,20 @@ async function exportLibrary() {
   });
   link.click();
   URL.revokeObjectURL(url);
-  toast(`${data.records.length} record(s) exported.`);
+  toast(`Exported ${describeCounts(data.records.length, countByStatus(data.records))}.`);
+}
+
+/** “152 records: 140 in the collection, 12 in the wishlist” (one file holds both lists). */
+function describeCounts(total, counts) {
+  return `${total} record${total === 1 ? '' : 's'}: ${counts.owned} in the collection, ${counts.wanted} in the wishlist`;
 }
 
 async function importLibrary(file) {
   try {
     const data = JSON.parse(await file.text());
-    const { imported, rejected } = await library.importData(data);
+    const { imported, rejected, counts } = await library.importData(data);
     await reload();
-    toast(`${imported} record(s) imported${rejected ? `, ${rejected} skipped as invalid` : ''}.`);
+    toast(`Imported ${describeCounts(imported, counts)}${rejected ? `; ${rejected} skipped as invalid` : ''}.`);
   } catch (error) {
     toast(error instanceof SyntaxError ? 'Unreadable file: invalid JSON.' : error.message);
   }

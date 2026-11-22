@@ -4,6 +4,19 @@ Format: [Keep a Changelog](https://keepachangelog.com/). Versions follow `APP_VE
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-11-22
+
+### Added
+- Wishlist albums are wanted **on vinyl** (stored in `format`, shown as “Wanted on vinyl”); older entries mean
+  any format. Export format and `schemaVersion` unchanged.
+- Search results: vinyl editions first (and albums with a vinyl edition first), a **Vinyl** badge on vinyl
+  editions, and “Vinyl: N editions” or “No vinyl in these results” on each album.
+- Adding to the Wishlist an album you already own asks first, listing your editions and saying when none is a vinyl.
+- Wishlist cards say “You own it on vinyl” or “You own it on CD only”.
+
+### Changed
+- Export and import messages give the count per list: the one export file holds both the Collection and the Wishlist.
+
 ## [0.6.0] - 2026-11-22
 
 ### Changed

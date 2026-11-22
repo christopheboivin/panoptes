@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   escapeHtml, candidateHints, recordHints, renderCandidates, renderLibrary, renderAlbums, renderEditions,
-  renderFilterOptions,
+  renderFilterOptions, ownedAlbumQuestion, vinylBadge,
 } from '../js/ui/render.js';
 import { MATCH } from '../js/models/match.js';
 import { STATUS } from '../js/models/record.js';
@@ -33,6 +33,25 @@ test('recordHints for a Collection copy and for a Wishlist album', () => {
   assert.deepEqual(recordHints(wanted, { ...none, otherEditions: [same] }), ['You own an edition of this album']);
   assert.deepEqual(recordHints(wanted, { ...none, otherEditions: [probable] }), ['You may own an edition of this album']);
   assert.deepEqual(recordHints(wanted, none), []);
+  const onCd = { record: { format: 'CD' }, level: MATCH.SAME };
+  const onLp = { record: { format: '12" Vinyl' }, level: MATCH.PROBABLE };
+  assert.deepEqual(recordHints(wanted, { ...none, otherEditions: [onCd] }), ['You own it on CD only']);
+  assert.deepEqual(recordHints(wanted, { ...none, otherEditions: [onCd, onLp] }), ['You own it on vinyl']);
+});
+
+test('ownedAlbumQuestion lists the owned editions and says when none is a vinyl', () => {
+  const cd = { record: { title: 'Kind of Blue', year: '1997', country: 'US', format: 'CD', label: 'Columbia', catno: 'CK 64935' }, level: MATCH.SAME };
+  const question = ownedAlbumQuestion({ title: 'Kind of Blue' }, [cd]);
+  assert.match(question, /^You already own “Kind of Blue”:\n• 1997 · US · CD \(Columbia CK 64935\)\nIt is not a vinyl \(CD only\)\./);
+  assert.match(ownedAlbumQuestion({ title: 'X' }, [cd, cd]), /None of them is a vinyl/);
+  assert.doesNotMatch(ownedAlbumQuestion({ title: 'X' }, [{ ...cd, record: { ...cd.record, format: 'Vinyl' } }]), /vinyl \(/);
+});
+
+test('vinylBadge: a vinyl edition, or the vinyl editions of an album', () => {
+  assert.match(vinylBadge({ format: '12" Vinyl' }), /Vinyl</);
+  assert.equal(vinylBadge({ format: 'CD' }), '');
+  assert.match(vinylBadge({}, 2), /Vinyl: 2 editions/);
+  assert.match(vinylBadge({}, 0), /No vinyl in these results/);
 });
 
 test('renderCandidates offers another copy, and no wishlist button for an album already wanted', () => {

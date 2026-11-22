@@ -39,6 +39,18 @@ export function formatFamily(format) {
   return 'Other';
 }
 
+const isVinyl = (item) => formatFamily(item.format) === 'Vinyl';
+
+/** Search results with the vinyl editions first, the order being kept otherwise (Wishlist: vinyl first). */
+export function vinylFirst(candidates) {
+  return [...candidates.filter(isVinyl), ...candidates.filter((item) => !isVinyl(item))];
+}
+
+/** Number of vinyl editions in a list. */
+export function countVinyl(editions) {
+  return editions.filter(isVinyl).length;
+}
+
 /** Oldest first (unknown years last), then by country, format, label and catalogue number. */
 export function sortEditions(editions) {
   const fields = ['country', 'format', 'label', 'catno'];

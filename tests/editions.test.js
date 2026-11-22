@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  groupByAlbum, formatFamily, sortEditions, filterOptions, filterEditions,
+  groupByAlbum, formatFamily, sortEditions, filterOptions, filterEditions, vinylFirst, countVinyl,
 } from '../js/models/editions.js';
 
 const edition = (id, groupId, extra = {}) => ({
@@ -68,4 +68,13 @@ test('filterEditions by format, country and text', () => {
   assert.deepEqual(ids(filterEditions(editions, { text: 'fontana 1959' })), ['d']);
   assert.deepEqual(ids(filterEditions(editions, { text: '8163' })), ['b', 'c']);
   assert.deepEqual(ids(filterEditions(editions, { text: '061213' })), ['c']);
+});
+
+test('vinylFirst moves vinyl editions to the top and keeps the order otherwise', () => {
+  const items = [
+    edition('1', 'a', { format: 'CD' }), edition('2', 'b', { format: '12" Vinyl' }),
+    edition('3', 'a', { format: 'Cassette' }), edition('4', 'c', { format: 'Vinyl' }),
+  ];
+  assert.deepEqual(vinylFirst(items).map((item) => item.source.id), ['2', '4', '1', '3']);
+  assert.equal(countVinyl(items), 2);
 });

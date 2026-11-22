@@ -9,6 +9,7 @@
 import { STATUS } from '../models/record.js';
 import { isCertain } from '../models/match.js';
 import { groupByArtist } from '../models/artists.js';
+import { formatFamily } from '../models/editions.js';
 
 const ESCAPES = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
 
@@ -57,12 +58,48 @@ export function albumHints({ copies, otherEditions, wanted } = NO_RELATIONS) {
   return hints;
 }
 
+const FAMILY_NAMES = { Vinyl: 'vinyl', CD: 'CD', Cassette: 'cassette', Digital: 'digital' };
+
+/**
+ * Formats of the owned records of matches, in words: 'on vinyl', 'on CD only',
+ * 'on CD and cassette only', or '' when their formats are unknown.
+ */
+export function ownedFormats(matches) {
+  const families = new Set(matches.map(({ record }) => formatFamily(record.format)));
+  if (families.has('Vinyl')) return 'on vinyl';
+  const known = [...families].map((family) => FAMILY_NAMES[family]).filter(Boolean);
+  return known.length > 0 ? `on ${known.join(' and ')} only` : '';
+}
+
+/**
+ * Plain-text question (for confirm()) before adding to the Wishlist an album
+ * that the Collection already holds. owned: copies and otherEditions matches.
+ */
+export function ownedAlbumQuestion(item, owned) {
+  const editions = owned.slice(0, 3).map(({ record }) => {
+    const catalog = [record.label, record.catno].filter(Boolean).join(' ');
+    const main = [record.year, record.country, record.format].filter(Boolean).join(' · ') || 'Unknown edition';
+    return `• ${main}${catalog ? ` (${catalog})` : ''}`;
+  });
+  if (owned.length > 3) editions.push(`• and ${owned.length - 3} more`);
+  const opening = isCertain(owned)
+    ? `You already own “${item.title}”:`
+    : `Your collection contains “${owned[0].record.title}”${owned[0].record.artist ? ` by ${owned[0].record.artist}` : ''}, which looks like the same album:`;
+  const formats = ownedFormats(owned);
+  const vinylNote = formats && formats !== 'on vinyl'
+    ? `${owned.length === 1 ? 'It is not a vinyl' : 'None of them is a vinyl'} (${formats.replace(/^on /, '')}).`
+    : '';
+  return [opening, ...editions, vinylNote, 'Add it to your wishlist anyway?'].filter(Boolean).join('\n');
+}
+
 /** Hints for a card of the library. */
 export function recordHints(record, { copies, otherEditions } = NO_RELATIONS) {
   if (record.status === STATUS.WANTED) {
     const owned = [...copies, ...otherEditions];
     if (owned.length === 0) return [];
-    return [isCertain(owned) ? 'You own an edition of this album' : 'You may own an edition of this album'];
+    const formats = ownedFormats(owned);
+    if (!formats) return [isCertain(owned) ? 'You own an edition of this album' : 'You may own an edition of this album'];
+    return [`${isCertain(owned) ? 'You own it' : 'You may own it'} ${formats}`];
   }
   const hints = [];
   if (copies.length > 0) {
@@ -98,7 +135,10 @@ function metaLine(item) {
 
 function recordCard(record, relations) {
   const isWanted = record.status === STATUS.WANTED;
-  const meta = metaLine(record);
+  // A Wishlist album only holds the format wanted (see models/record.js toAlbum).
+  const meta = isWanted
+    ? (record.format ? escapeHtml(`Wanted on ${FAMILY_NAMES[formatFamily(record.format)] ?? record.format}`) : '')
+    : metaLine(record);
   return `<li class="card">
     ${cover(record.coverUrls)}
     <div class="card__body">
@@ -156,6 +196,19 @@ function button(act, index, label, ghost = false) {
   return `<button type="button" class="btn btn--small${ghost ? ' btn--ghost' : ''}" data-act="${act}" data-index="${index}">${label}</button>`;
 }
 
+/**
+ * Vinyl badge of a search result. vinylCount: vinyl editions of the album in
+ * the results, or null for a single edition (badge only when it is a vinyl).
+ */
+export function vinylBadge(item, vinylCount = null) {
+  if (vinylCount === null) {
+    return formatFamily(item.format) === 'Vinyl' ? '<p class="badge badge--vinyl">Vinyl</p>' : '';
+  }
+  return vinylCount > 0
+    ? `<p class="badge badge--vinyl">Vinyl: ${count(vinylCount, 'edition', 'editions')}</p>`
+    : '<p class="badge">No vinyl in these results</p>';
+}
+
 function wishButton(relations, index) {
   return isCertain(relations.wanted) ? '' : button('wish', index, '+ Wishlist', true);
 }
@@ -176,6 +229,7 @@ export function renderCandidates(items, sourceName = '') {
       <h3 class="card__title">${escapeHtml(candidate.title)}</h3>
       <p class="card__artist">${escapeHtml(candidate.artist)}</p>
       <p class="card__meta">${metaLine(candidate)}</p>
+      ${vinylBadge(candidate)}
       ${sourceName ? `<p class="card__source">Source: ${escapeHtml(sourceName)}</p>` : ''}
       ${hintLines(candidateHints(relations))}
       <div class="card__actions">
@@ -190,13 +244,13 @@ export function renderCandidates(items, sourceName = '') {
 
 /**
  * Search results grouped by album (text search).
- * @param {Array<{album: object, editionCount: number, relations: object, canPick: boolean}>} items
- *   album: one of its editions; editionCount: editions of it in the results;
+ * @param {Array<{album: object, editionCount: number, vinylCount: number, relations: object, canPick: boolean}>} items
+ *   album: one of its editions; editionCount: editions of it in the results, vinylCount: vinyl ones;
  *   canPick: its editions can be listed (otherwise the single edition is added directly)
  * @param {string} [sourceName]
  */
 export function renderAlbums(items, sourceName = '') {
-  return items.map(({ album, editionCount, relations = NO_RELATIONS, canPick }, index) => {
+  return items.map(({ album, editionCount, vinylCount = 0, relations = NO_RELATIONS, canPick }, index) => {
     const detail = canPick
       ? escapeHtml(`${count(editionCount, 'edition', 'editions')} in these results`)
       : metaLine(album);
@@ -209,6 +263,7 @@ export function renderAlbums(items, sourceName = '') {
       <h3 class="card__title">${escapeHtml(album.title)}</h3>
       <p class="card__artist">${escapeHtml(album.artist)}</p>
       ${detail ? `<p class="card__meta">${detail}</p>` : ''}
+      ${canPick ? vinylBadge(album, vinylCount) : vinylBadge(album)}
       ${sourceName ? `<p class="card__source">Source: ${escapeHtml(sourceName)}</p>` : ''}
       ${hintLines(canPick ? albumHints(relations) : candidateHints(relations))}
       <div class="card__actions">

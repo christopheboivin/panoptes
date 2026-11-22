@@ -44,6 +44,13 @@ export function parseExport(data) {
   return { records, rejected };
 }
 
+/** Number of records per list: { owned, wanted }. */
+export function countByStatus(records) {
+  const counts = Object.fromEntries(Object.values(STATUS).map((status) => [status, 0]));
+  for (const record of records) counts[record.status] += 1;
+  return counts;
+}
+
 export function createLibrary(storage) {
   return {
     list: () => storage.getAll(),
@@ -71,11 +78,14 @@ export function createLibrary(storage) {
       return buildExport(await storage.getAll());
     },
 
-    /** Merges an export: records with the same identifier are replaced. */
+    /**
+     * Merges an export: records with the same identifier are replaced.
+     * counts: records imported per list (see countByStatus).
+     */
     async importData(data) {
       const { records, rejected } = parseExport(data);
       await storage.putMany(records);
-      return { imported: records.length, rejected };
+      return { imported: records.length, rejected, counts: countByStatus(records) };
     },
   };
 }

@@ -45,7 +45,9 @@ test('toAlbum keeps the album and drops the edition details', () => {
   const album = createRecord(toAlbum(edition), STATUS.WANTED);
   assert.equal(album.title, 'Kind of Blue');
   assert.equal(album.artist, 'Miles Davis');
-  for (const field of ['year', 'format', 'label', 'catno', 'barcode', 'country']) assert.equal(album[field], '', field);
+  for (const field of ['year', 'label', 'catno', 'barcode', 'country']) assert.equal(album[field], '', field);
+  assert.equal(album.format, 'Vinyl', 'format wanted, not the edition\'s');
+  assert.equal(createRecord(toAlbum(edition, ''), STATUS.WANTED).format, '');
   assert.deepEqual(album.source, { provider: 'musicbrainz', id: '', groupId: 'rg' });
   assert.deepEqual(album.coverUrls, ['https://example.org/a.jpg']);
 });

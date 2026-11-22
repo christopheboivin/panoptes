@@ -21,7 +21,7 @@ test('an export can be re-imported unchanged', async () => {
 
   const target = createLibrary(memoryStorage());
   const result = await target.importData(exported);
-  assert.deepEqual(result, { imported: 2, rejected: 0 });
+  assert.deepEqual(result, { imported: 2, rejected: 0, counts: { owned: 1, wanted: 1 } });
   assert.deepEqual(
     (await target.list()).map((r) => r.title).sort(),
     ['Blue Train', 'Mingus Ah Um'],

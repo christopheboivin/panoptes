@@ -32,7 +32,7 @@ A personal web application to catalogue a collection of vinyl records and CDs: s
   - `schemaVersion` stays 1 (`groupId` is optional; no older app version is in use).
   - Later: per-copy details (condition, purchase date, price, notes), “group by album” view.
 
-## Current state (v0.6.0)
+## Current state (v0.7.0)
 
 - **Live at <https://christopheboivin.github.io/panoptes/>**, repository <https://github.com/christopheboivin/panoptes>
   (public, MIT licence, first commit `522cde0`).
@@ -79,6 +79,13 @@ A personal web application to catalogue a collection of vinyl records and CDs: s
 - **v0.6.0** (22 November 2026): library grouped by artist (`models/artists.js`), folded by default with two
   covers as a preview; footer replaced by a **⋯** header menu (Export, Import, Settings). The 2-per-line grid
   on the phone is kept (user's choice).
+- **v0.7.0** (22 November 2026): **Wishlist, vinyl first**. Decided with the user:
+  - No separate Wishlist export: the single export file already holds both lists (`status`); messages now say so.
+  - A Wishlist album is wanted on **Vinyl** (`format` of the wanted record, `WANTED_FORMAT` in `models/record.js`;
+    '' = any). Results: vinyl first, Vinyl badges (“No vinyl in these results” only covers the results, not every
+    edition). Adding an owned album to the Wishlist asks first (`ownedAlbumQuestion`).
+  - **Next: where to buy** — an ordered list of shop links per Wishlist album; the user will give the shops,
+    their order and country. Plan: search links only (no request to the shops from the page).
 - **Not yet tested**: camera scanning and “from a photo” with the hosted library, in Firefox on desktop and on Android.
 
 ## Discogs token (decided 22 November 2026)
