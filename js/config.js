@@ -1,6 +1,6 @@
 /** Centralised application settings. */
 
-export const APP_VERSION = '0.7.1';
+export const APP_VERSION = '0.8.0';
 
 /**
  * Fallback barcode reading engine, loaded only when the browser has no
@@ -65,3 +65,15 @@ export const DISCOGS_MIN_DELAY_MS = 1100;
 
 /** Discogs page where a personal token is created. */
 export const DISCOGS_TOKEN_PAGE = 'https://www.discogs.com/settings/developers';
+
+/**
+ * Shops for the Wishlist shopping list, in the order they are offered (France).
+ * {query} is replaced by the encoded search words (see models/shops.js). The
+ * app never contacts these sites: it only writes links, followed when tapped.
+ */
+export const SHOPS = [
+  { name: 'Fnac', url: 'https://www.fnac.com/SearchResult/ResultList.aspx?Search={query}' },
+  { name: 'Cultura', url: 'https://www.cultura.com/search/results.html?search_query={query}' },
+  // i=popular: the “Musique : CD & Vinyles” department.
+  { name: 'Amazon', url: 'https://www.amazon.fr/s?k={query}&i=popular' },
+];

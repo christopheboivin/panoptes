@@ -3,6 +3,7 @@ node_modules/
 
 # Backups of the personal library: never publish them.
 panoptes-export-*.json
+panoptes-wishlist-*.html
 
 # Personal Claude Code settings (machine-specific).
 .claude/settings.local.json

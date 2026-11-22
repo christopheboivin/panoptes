@@ -3,7 +3,8 @@
  * Business logic lives in storage/, providers/, identify/ and scanner/.
  */
 
-import { APP_VERSION, DISCOGS_TOKEN_PAGE, OCR_MIN_CONFIDENCE } from './config.js';
+import { APP_VERSION, DISCOGS_TOKEN_PAGE, OCR_MIN_CONFIDENCE, SHOPS } from './config.js';
+import { renderShoppingList } from './ui/shopping-list.js';
 import * as db from './storage/db.js';
 import { createLibrary, countByStatus, STATUS } from './storage/library.js';
 import { createSettings } from './storage/settings.js';
@@ -598,17 +599,29 @@ function saveDiscogsToken(token) {
 
 /* ---------- Export / import ---------- */
 
+function downloadFile(content, type, filename) {
+  const url = URL.createObjectURL(new Blob([content], { type }));
+  Object.assign(document.createElement('a'), { href: url, download: filename }).click();
+  URL.revokeObjectURL(url);
+}
+
 async function exportLibrary() {
   const data = await library.exportData();
-  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  const link = Object.assign(document.createElement('a'), {
-    href: url,
-    download: `panoptes-export-${data.exportedAt.slice(0, 10)}.json`,
-  });
-  link.click();
-  URL.revokeObjectURL(url);
+  downloadFile(JSON.stringify(data, null, 2), 'application/json', `panoptes-export-${data.exportedAt.slice(0, 10)}.json`);
   toast(`Exported ${describeCounts(data.records.length, countByStatus(data.records))}.`);
+}
+
+/** Saves the Wishlist as an HTML page with shop links per album (see ui/shopping-list.js). */
+function saveShoppingList() {
+  const wanted = state.records.filter((record) => record.status === STATUS.WANTED);
+  if (wanted.length === 0) {
+    toast('Your wishlist is empty.');
+    return;
+  }
+  const date = new Date();
+  const html = renderShoppingList(wanted, { shops: SHOPS, relationsById: state.relations, date });
+  downloadFile(html, 'text/html', `panoptes-wishlist-${date.toISOString().slice(0, 10)}.html`);
+  toast(`Shopping list saved: ${wanted.length} album${wanted.length === 1 ? '' : 's'}.`);
 }
 
 /** “152 records: 140 in the collection, 12 in the wishlist” (one file holds both lists). */
@@ -771,6 +784,7 @@ function bindEvents() {
     if (event.target.closest('button.menu__item')) closeMenu();
   });
 
+  $('shopping-list').addEventListener('click', saveShoppingList);
   $('export').addEventListener('click', () => exportLibrary().catch((error) => toast(error.message)));
   $('import').addEventListener('change', (event) => {
     closeMenu();

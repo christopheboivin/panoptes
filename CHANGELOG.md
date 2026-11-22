@@ -4,6 +4,14 @@ Format: [Keep a Changelog](https://keepachangelog.com/). Versions follow `APP_VE
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-11-22
+
+### Added
+- **Shopping list** (⋯ menu): saves the Wishlist as a standalone HTML page (`panoptes-wishlist-YYYY-MM-DD.html`),
+  albums grouped by artist, each with search links to Fnac, Cultura and Amazon (amazon.fr, music department),
+  in that order, for “artist title vinyle”. Albums you already own are pointed out. Shops are listed in
+  `SHOPS` (`js/config.js`); the app never contacts them, the links are only followed when tapped.
+
 ## [0.7.1] - 2026-11-22
 
 ### Added

@@ -15,6 +15,7 @@ Target browser: **Firefox** (desktop and Android). Chrome also works; Safari/iPh
 - Two data sources, queried in order: [MusicBrainz](https://musicbrainz.org), then [Discogs](https://www.discogs.com) if MusicBrainz finds nothing (Discogs has far better coverage of vinyl). The source of each result is shown.
 - If no source knows the barcode, search by artist, title or catalogue number instead: the scanned code is then saved with the record you pick.
 - Two lists: **Collection** (one entry per physical copy, with its edition: country, label, catalogue number…) and **Wishlist** (albums, wanted on vinyl by default). One export file holds both lists.
+- **Shopping list**: the Wishlist saved as an HTML page, with search links per album to Fnac, Cultura and Amazon (France).
 - **Vinyl first**: search results list vinyl editions first and say whether an album has a vinyl edition; adding to the Wishlist an album you already own asks first.
 - **Edition picker**: “Which edition do you own?” lists every edition of an album, filterable by format, country and text (label, catalogue number, year), to compare with the record in hand; essential for records without a barcode. Opened by **I own it…** (artist/title search results are grouped by album), **Got it** on a wishlist album, or **Other editions…** after a barcode search.
 - Several copies of an edition, and several editions of an album, are allowed: search results and cards only point them out (“In your collection (1 copy)”, “You own another edition of this album”, “On your wishlist”).

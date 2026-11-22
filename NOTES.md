@@ -32,7 +32,7 @@ A personal web application to catalogue a collection of vinyl records and CDs: s
   - `schemaVersion` stays 1 (`groupId` is optional; no older app version is in use).
   - Later: per-copy details (condition, purchase date, price, notes), “group by album” view.
 
-## Current state (v0.7.1)
+## Current state (v0.8.0)
 
 - **Live at <https://christopheboivin.github.io/panoptes/>**, repository <https://github.com/christopheboivin/panoptes>
   (public, MIT licence, first commit `522cde0`).
@@ -84,12 +84,16 @@ A personal web application to catalogue a collection of vinyl records and CDs: s
   - A Wishlist album is wanted on **Vinyl** (`format` of the wanted record, `WANTED_FORMAT` in `models/record.js`;
     older '' upgraded to Vinyl by `upgradeRecord` since v0.7.1). Results: vinyl first, Vinyl badges (“No vinyl in these results” only covers the results, not every
     edition). Adding an owned album to the Wishlist asks first (`ownedAlbumQuestion`).
-  - **Next: where to buy** — an ordered list of shop links per Wishlist album; the user will give the shops,
-    their order and country. Plan: search links only (no request to the shops from the page).
+  - Where to buy: done in v0.8.0 (below).
 - **v0.7.1** (22 November 2026): format icon on Collection covers (Vinyl, CD, Cassette, Digital = globe),
   “⚠ Format unknown” on Collection copies without a format (left empty, never guessed). The user's few CD /
   Digital records are vinyls matched to the wrong edition: kept as found, the icon makes them easy to spot.
   Idea (not decided): a “Change edition…” button on a Collection card (picker, same `id`).
+- **v0.8.0** (22 November 2026): **Shopping list** (⋯ menu), decided with the user: one HTML page for the whole
+  Wishlist (downloaded, no covers), links per album to **Fnac, Cultura, Amazon** in that order, France,
+  search links only (`SHOPS` in `config.js`, `models/shops.js`, `ui/shopping-list.js`). The app never contacts
+  the shops. Amazon search checked in a browser (`i=popular` = “Musique : CD & Vinyles”); **Fnac and Cultura
+  refuse automated browsers (403): their links are to be checked by the user** on a real device.
 - **Not yet tested**: camera scanning and “from a photo” with the hosted library, in Firefox on desktop and on Android.
 
 ## Discogs token (decided 22 November 2026)
