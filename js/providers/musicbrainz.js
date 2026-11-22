@@ -11,6 +11,7 @@
  */
 
 import { MUSICBRAINZ_API, COVER_ART_API, MUSICBRAINZ_MIN_DELAY_MS, SEARCH_LIMIT } from '../config.js';
+import { createThrottle } from './throttle.js';
 
 export const PROVIDER_ID = 'musicbrainz';
 
@@ -68,14 +69,8 @@ export function buildTextQuery({ artist = '', title = '', catno = '' }) {
 
 const RETRY_DELAYS_MS = [1500, 3000, 6000];
 
-let lastRequestAt = 0;
-
 /** Honours MusicBrainz's limit of one request per second. */
-async function throttle() {
-  const wait = lastRequestAt + MUSICBRAINZ_MIN_DELAY_MS - Date.now();
-  if (wait > 0) await new Promise((resolve) => setTimeout(resolve, wait));
-  lastRequestAt = Date.now();
-}
+const throttle = createThrottle(MUSICBRAINZ_MIN_DELAY_MS);
 
 /**
  * MusicBrainz answers 503 when a rate limit is reached (ours, or the

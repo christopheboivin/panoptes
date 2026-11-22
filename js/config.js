@@ -1,6 +1,6 @@
 /** Centralised application settings. */
 
-export const APP_VERSION = '0.2.0';
+export const APP_VERSION = '0.3.0';
 
 /**
  * Fallback barcode reading engine, loaded only when the browser has no

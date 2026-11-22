@@ -65,7 +65,12 @@ export async function startLiveScan(video, onCode) {
   };
 
   video.srcObject = stream;
-  await video.play();
+  try {
+    await video.play();
+  } catch (error) {
+    stop(); // do not leave the camera on
+    throw new Error(`Cannot display the camera: ${error?.message ?? error}`);
+  }
   tick();
   return stop;
 }

@@ -11,6 +11,7 @@
  */
 
 import { DISCOGS_API, DISCOGS_MIN_DELAY_MS, SEARCH_LIMIT } from '../config.js';
+import { createThrottle } from './throttle.js';
 
 export const PROVIDER_ID = 'discogs';
 
@@ -93,13 +94,7 @@ const RETRY_DELAYS_MS = [2000, 5000];
  * @param {typeof fetch} [options.fetchFn] - replaceable in tests
  */
 export function createDiscogsProvider({ getToken, fetchFn = (...args) => fetch(...args) }) {
-  let lastRequestAt = 0;
-
-  async function throttle() {
-    const wait = lastRequestAt + DISCOGS_MIN_DELAY_MS - Date.now();
-    if (wait > 0) await new Promise((resolve) => setTimeout(resolve, wait));
-    lastRequestAt = Date.now();
-  }
+  const throttle = createThrottle(DISCOGS_MIN_DELAY_MS);
 
   /** Discogs answers 429 when the rate limit is reached: retry a little later. */
   async function fetchWithRetry(url) {

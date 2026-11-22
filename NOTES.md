@@ -20,7 +20,7 @@ A personal web application to catalogue a collection of vinyl records and CDs: s
 - **Hosting: GitHub Pages** (HTTPS is required for the camera). The repository only contains the code, never the library.
 - **Everything in English**: user interface, messages, code comments, tests and documentation (decided 22 November 2026).
 
-## Current state (v0.2.0)
+## Current state (v0.3.0)
 
 - **Live at <https://christopheboivin.github.io/panoptes/>**, repository <https://github.com/christopheboivin/panoptes>
   (public, MIT licence, first commit `522cde0`).
@@ -35,9 +35,12 @@ A personal web application to catalogue a collection of vinyl records and CDs: s
 - **Discogs tested and validated in Firefox** by the user (22 November 2026): barcode and catalogue number.
 - barcode-detector 2.2.5 and its zxing_reader.wasm file (zxing-wasm 1.2.7) are **hosted in `vendor/`**:
   no more requests to jsDelivr. Loading of the .wasm file checked under Node.
-- 30 unit tests (`npm test`, Node.js, no dependencies).
+- 34 unit tests (`npm test`, Node.js, no dependencies).
 - Whole project translated into English (interface, messages, comments, tests, documentation) on 22 November 2026;
   the IndexedDB data, the export format and the Discogs token storage are unchanged.
+- **v0.3.0** (22 November 2026): camera always released (dialog closed during start-up, video error),
+  error messages on add / “Got it” / remove, stale search results ignored, shared request throttle
+  (`providers/throttle.js`). See `CHANGELOG.md`.
 - **Not yet tested**: camera scanning and “from a photo” with the hosted library, in Firefox on desktop and on Android.
 
 ## Discogs token (decided 22 November 2026)

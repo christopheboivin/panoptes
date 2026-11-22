@@ -85,6 +85,11 @@ async function reload() {
   render();
 }
 
+/** reload() for event handlers: a storage failure is shown, never thrown. */
+function refresh() {
+  return reload().catch((error) => toast(`Storage unavailable: ${error.message}`));
+}
+
 let toastTimer = null;
 function toast(message) {
   els.toast.textContent = message;
@@ -113,18 +118,30 @@ function handleCoverError(event) {
 
 /* ---------- Search and identification ---------- */
 
+/** Number of the latest search: results of an older one are ignored. */
+let searchId = 0;
+
+/** The search in progress, if any, no longer matters (new search, new scan, dialog reopened). */
+function cancelSearch() {
+  searchId += 1;
+}
+
 /**
  * Runs a search and displays its results.
  * search() returns { candidates, providerName?, skipped?, detail? }; runSearch returns
- * that result (or null on error, which has already been shown to the user).
+ * that result, or null on error (already shown to the user) or when a newer
+ * search or scan replaced this one (nothing is shown).
  */
 async function runSearch(label, search) {
+  cancelSearch();
+  const id = searchId;
   state.candidates = [];
   state.candidatesSource = '';
   renderCandidateList();
   setStatus(`${label}…`);
   try {
     const result = await search();
+    if (id !== searchId) return null;
     state.candidates = result.candidates;
     state.candidatesSource = result.providerName ?? '';
     renderCandidateList();
@@ -134,7 +151,7 @@ async function runSearch(label, search) {
     setStatus([result.detail, summary, discogsHint(result)].filter(Boolean).join(' '));
     return result;
   } catch (error) {
-    setStatus(error.message, 'warn');
+    if (id === searchId) setStatus(error.message, 'warn');
     return null;
   }
 }
@@ -151,6 +168,7 @@ function discogsHint(result) {
  * nothing is looked up until the user confirms.
  */
 function proposeBarcode(code) {
+  cancelSearch();
   const digits = normalizeBarcode(code);
   state.candidates = [];
   renderCandidateList();
@@ -195,7 +213,15 @@ async function searchByBarcode(code) {
   }
 }
 
+/**
+ * Scan session number: incremented by every stop, so that a camera that
+ * finishes starting after the user cancelled (dialog closed while the
+ * permission prompt was open, for instance) is stopped at once.
+ */
+let scanSession = 0;
+
 function stopScanning() {
+  scanSession += 1;
   state.stopScan?.();
   state.stopScan = null;
   els.scanner.hidden = true;
@@ -203,22 +229,31 @@ function stopScanning() {
 
 async function startScanning() {
   stopScanning();
+  const session = scanSession;
   els.scanner.hidden = false;
   setStatus('Point the camera at the record\'s barcode.');
   try {
-    state.stopScan = await startLiveScan(els.video, (code) => {
+    const stop = await startLiveScan(els.video, (code) => {
+      if (session !== scanSession) return;
       state.stopScan = null;
       els.scanner.hidden = true;
       navigator.vibrate?.(80);
       proposeBarcode(code);
     });
+    if (session !== scanSession) {
+      stop(); // cancelled while the camera was starting
+      return;
+    }
+    state.stopScan = stop;
   } catch (error) {
+    if (session !== scanSession) return;
     els.scanner.hidden = true;
     setStatus(error.message);
   }
 }
 
 function openAddDialog() {
+  cancelSearch();
   state.candidates = [];
   renderCandidateList();
   setStatus('');
@@ -297,14 +332,18 @@ function bindEvents() {
     if (!button) return;
     const record = state.records.find((r) => r.id === button.dataset.id);
     if (!record) return;
-    if (button.dataset.action === 'acquire') {
-      await library.setStatus(record, STATUS.OWNED);
-      toast(`“${record.title}” added to your collection.`);
-    } else if (button.dataset.action === 'remove') {
-      if (!window.confirm(`Remove “${record.title}”?`)) return;
-      await library.remove(record.id);
+    try {
+      if (button.dataset.action === 'acquire') {
+        await library.setStatus(record, STATUS.OWNED);
+        toast(`“${record.title}” added to your collection.`);
+      } else if (button.dataset.action === 'remove') {
+        if (!window.confirm(`Remove “${record.title}”?`)) return;
+        await library.remove(record.id);
+      }
+    } catch (error) {
+      toast(`Could not update “${record.title}”: ${error.message}`);
     }
-    await reload();
+    await refresh();
   });
 
   $('open-add').addEventListener('click', openAddDialog);
@@ -350,10 +389,14 @@ function bindEvents() {
     // If the source does not know the edition's barcode, keep the one from the record in hand.
     const scanned = normalizeBarcode(els.searchForm.elements.barcode.value);
     const data = candidate.barcode || !scanned ? candidate : { ...candidate, barcode: scanned };
-    const record = await library.add(data, button.dataset.add);
-    await reload();
+    try {
+      const record = await library.add(data, button.dataset.add);
+      toast(`“${record.title}” added to your ${record.status === STATUS.OWNED ? 'collection' : 'wishlist'}.`);
+    } catch (error) {
+      toast(`Could not add this record: ${error.message}`);
+    }
+    await refresh();
     renderCandidateList();
-    toast(`“${record.title}” added to your ${record.status === STATUS.OWNED ? 'collection' : 'wishlist'}.`);
   });
 
   $('export').addEventListener('click', () => exportLibrary().catch((error) => toast(error.message)));

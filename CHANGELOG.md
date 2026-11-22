@@ -4,6 +4,16 @@ Format: [Keep a Changelog](https://keepachangelog.com/). Versions follow `APP_VE
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-11-22
+
+### Fixed
+- The camera no longer stays on when the Add dialog is closed while the camera is starting
+  (permission prompt still open), or when the video cannot be displayed.
+- Adding a record, “Got it” and “Remove” now show an error message instead of failing silently.
+- The results of an older search no longer overwrite those of a newer one (or a new scan).
+- MusicBrainz and Discogs requests started at the same time are now properly spaced out
+  (shared `providers/throttle.js`).
+
 ### Changed
 - Whole project translated into English: interface, messages, comments, tests and documentation.
   IndexedDB data, export format and Discogs token storage are unchanged.
