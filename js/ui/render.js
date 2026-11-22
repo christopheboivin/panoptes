@@ -133,18 +133,36 @@ function metaLine(item) {
   return [item.year, item.format, item.country, catalog].filter(Boolean).map(escapeHtml).join(' · ');
 }
 
+/** Icons drawn over a cover, by format family (24×24, on a light disc: see .format-icon). */
+const FORMAT_ICONS = {
+  Vinyl: '<circle cx="12" cy="12" r="10" fill="currentColor"/><circle cx="12" cy="12" r="7" fill="none" stroke="#fff" stroke-opacity=".35" stroke-width=".7"/><circle cx="12" cy="12" r="3.6" fill="#c2410c"/><circle cx="12" cy="12" r="1" fill="#fff"/>',
+  CD: '<circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="2.8" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 5.5a6.5 6.5 0 0 1 6.5 6.5" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>',
+  Cassette: '<rect x="2" y="5" width="20" height="14" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="8" cy="11" r="2" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="16" cy="11" r="2" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M7 19l1.5-3h7l1.5 3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>',
+  Digital: '<circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2"/><ellipse cx="12" cy="12" rx="4.2" ry="10" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M2.5 9h19M2.5 15h19" fill="none" stroke="currentColor" stroke-width="1.6"/>',
+};
+
+/** Format icon of a Collection copy (Vinyl, CD, Cassette, Digital), or '' for any other format. */
+export function formatIcon(format) {
+  const family = formatFamily(format);
+  const paths = FORMAT_ICONS[family];
+  if (!paths) return '';
+  return `<svg class="format-icon" viewBox="0 0 24 24" role="img" aria-label="${family}"><title>${family}</title>${paths}</svg>`;
+}
+
 function recordCard(record, relations) {
   const isWanted = record.status === STATUS.WANTED;
   // A Wishlist album only holds the format wanted (see models/record.js toAlbum).
   const meta = isWanted
     ? (record.format ? escapeHtml(`Wanted on ${FAMILY_NAMES[formatFamily(record.format)] ?? record.format}`) : '')
     : metaLine(record);
+  const unknownFormat = !isWanted && !record.format;
   return `<li class="card">
-    ${cover(record.coverUrls)}
+    <div class="cover-wrap">${cover(record.coverUrls)}${isWanted ? '' : formatIcon(record.format)}</div>
     <div class="card__body">
       <h3 class="card__title">${escapeHtml(record.title)}</h3>
       <p class="card__artist">${escapeHtml(record.artist)}</p>
       ${meta ? `<p class="card__meta">${meta}</p>` : ''}
+      ${unknownFormat ? '<p class="card__warn">⚠ Format unknown</p>' : ''}
       ${hintLines(recordHints(record, relations))}
       <div class="card__actions">
         ${isWanted ? `<button type="button" class="btn btn--small" data-action="acquire" data-id="${escapeHtml(record.id)}">Got it</button>` : ''}

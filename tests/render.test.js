@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   escapeHtml, candidateHints, recordHints, renderCandidates, renderLibrary, renderAlbums, renderEditions,
-  renderFilterOptions, ownedAlbumQuestion, vinylBadge,
+  renderFilterOptions, ownedAlbumQuestion, vinylBadge, formatIcon,
 } from '../js/ui/render.js';
 import { MATCH } from '../js/models/match.js';
 import { STATUS } from '../js/models/record.js';
@@ -100,3 +100,19 @@ test('renderFilterOptions keeps the selected value', () => {
   assert.match(html, /<option value="CD" selected>CD \(1\)<\/option>/);
 });
 
+
+test('formatIcon for Vinyl, CD, Cassette and Digital only', () => {
+  assert.match(formatIcon('2×Vinyl, LP, Album'), /aria-label="Vinyl"/);
+  assert.match(formatIcon('CD'), /aria-label="CD"/);
+  assert.match(formatIcon('Cassette'), /aria-label="Cassette"/);
+  assert.match(formatIcon('Digital Media'), /aria-label="Digital"/);
+  assert.equal(formatIcon(''), '');
+  assert.equal(formatIcon('DVD'), '');
+});
+
+test('a Collection copy without a format is flagged, a Wishlist album is not', () => {
+  const owned = { id: '1', status: STATUS.OWNED, title: 'A', artist: 'X', format: '', coverUrls: [] };
+  const wanted = { ...owned, id: '2', status: STATUS.WANTED };
+  assert.match(renderLibrary([owned], { status: STATUS.OWNED, filter: '' }), /Format unknown/);
+  assert.doesNotMatch(renderLibrary([wanted], { status: STATUS.WANTED, filter: '' }), /Format unknown/);
+});

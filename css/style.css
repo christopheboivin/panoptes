@@ -102,6 +102,11 @@ input[type="text"], input[type="search"], input[type="password"] {
 .candidate { display: grid; grid-template-columns: 88px minmax(0, 1fr); align-items: start; }
 
 .cover { display: block; width: 100%; height: auto; aspect-ratio: 1; object-fit: cover; background: var(--line); }
+.cover-wrap { position: relative; }
+.format-icon {
+  position: absolute; top: 6px; left: 6px; width: 28px; height: 28px; padding: 4px; border-radius: 50%;
+  background: rgb(255 255 255 / 0.92); color: #18181a; box-shadow: 0 1px 3px rgb(0 0 0 / 0.35);
+}
 .cover--empty {
   background: radial-gradient(circle, var(--surface) 0 9%, var(--muted) 10% 12%, #222 13% 64%, var(--line) 65%);
 }
@@ -112,6 +117,7 @@ input[type="text"], input[type="search"], input[type="password"] {
 .card__meta { color: var(--muted); font-size: 13px; }
 .card__actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
 .card__hint { margin-top: 4px; color: var(--accent); font-size: 13px; font-weight: 600; }
+.card__warn { margin-top: 4px; color: light-dark(#a16207, #facc15); font-size: 13px; font-weight: 600; }
 .badge {
   justify-self: start; margin-top: 4px; padding: 2px 10px; border: 1px solid var(--line); border-radius: 999px;
   color: var(--muted); font-size: 13px; font-weight: 600;

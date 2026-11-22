@@ -91,11 +91,21 @@ export function validateRecord(input) {
 export const WANTED_FORMAT = 'Vinyl';
 
 /**
+ * Brings an older record up to date (decided 22 November 2026): a Wishlist
+ * album without a format is wanted on WANTED_FORMAT. Returns the same object
+ * when nothing changes, so callers can tell which records to save.
+ */
+export function upgradeRecord(record) {
+  if (record.status === STATUS.WANTED && !record.format) return { ...record, format: WANTED_FORMAT };
+  return record;
+}
+
+/**
  * Album-level data of a candidate, for the Wishlist: the details of the
  * edition that happened to be clicked (year, format, label, catalogue
  * number, barcode, country, edition id) are left out on purpose.
  * format holds the format wanted (a family such as 'Vinyl'), not the
- * clicked edition's; '' (older records) means any format.
+ * clicked edition's (older records without one: see upgradeRecord).
  */
 export function toAlbum(candidate, format = WANTED_FORMAT) {
   return {

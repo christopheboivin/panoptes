@@ -6,7 +6,7 @@
  * replaced, or faked in tests.
  */
 
-import { createRecord, validateRecord, toAlbum, STATUS } from '../models/record.js';
+import { createRecord, validateRecord, toAlbum, upgradeRecord, STATUS } from '../models/record.js';
 
 export const EXPORT_APP = 'panoptes';
 export const EXPORT_SCHEMA_VERSION = 1;
@@ -36,7 +36,7 @@ export function parseExport(data) {
   let rejected = 0;
   for (const item of data.records) {
     try {
-      records.push(validateRecord(item));
+      records.push(upgradeRecord(validateRecord(item)));
     } catch {
       rejected += 1;
     }
@@ -53,7 +53,14 @@ export function countByStatus(records) {
 
 export function createLibrary(storage) {
   return {
-    list: () => storage.getAll(),
+    /** All records; older ones are upgraded and saved once (see upgradeRecord). */
+    async list() {
+      const stored = await storage.getAll();
+      const records = stored.map(upgradeRecord);
+      const upgraded = records.filter((record, index) => record !== stored[index]);
+      if (upgraded.length > 0) await storage.putMany(upgraded);
+      return records;
+    },
 
     /**
      * Adds a copy to the Collection, or an album to the Wishlist (the

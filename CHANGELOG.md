@@ -4,6 +4,16 @@ Format: [Keep a Changelog](https://keepachangelog.com/). Versions follow `APP_VE
 
 ## [Unreleased]
 
+## [0.7.1] - 2026-11-22
+
+### Added
+- Collection covers show a small format icon in the top-left corner: Vinyl, CD, Cassette or Digital (globe).
+- Collection copies without a format show “⚠ Format unknown”.
+
+### Changed
+- Wishlist albums without a format (added before 0.7.0) are now wanted on vinyl: upgraded once when the app
+  loads, and on import. Collection records keep their format as found by the source.
+
 ## [0.7.0] - 2026-11-22
 
 ### Added

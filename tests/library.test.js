@@ -72,3 +72,15 @@ test('parseExport rejects a foreign file and skips invalid records', () => {
   assert.equal(records.length, 1);
   assert.equal(rejected, 1);
 });
+
+test('older Wishlist albums without a format are wanted on vinyl, on load and on import', async () => {
+  const storage = memoryStorage();
+  await storage.put({ id: 'w', status: STATUS.WANTED, title: 'A', format: '' });
+  await storage.put({ id: 'o', status: STATUS.OWNED, title: 'B', format: '' });
+  const lib = createLibrary(storage);
+  const byId = Object.fromEntries((await lib.list()).map((r) => [r.id, r.format]));
+  assert.deepEqual(byId, { w: 'Vinyl', o: '' }, 'Collection records keep an unknown format');
+  assert.equal((await storage.getAll()).find((r) => r.id === 'w').format, 'Vinyl', 'saved');
+  const { records } = parseExport({ app: 'panoptes', schemaVersion: 1, records: [{ id: 'x', status: 'wanted', title: 'C' }] });
+  assert.equal(records[0].format, 'Vinyl');
+});
