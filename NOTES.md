@@ -32,7 +32,7 @@ A personal web application to catalogue a collection of vinyl records and CDs: s
   - `schemaVersion` stays 1 (`groupId` is optional; no older app version is in use).
   - Later: per-copy details (condition, purchase date, price, notes), “group by album” view.
 
-## Current state (v0.5.1)
+## Current state (v0.6.0)
 
 - **Live at <https://christopheboivin.github.io/panoptes/>**, repository <https://github.com/christopheboivin/panoptes>
   (public, MIT licence, first commit `522cde0`).
@@ -76,6 +76,9 @@ A personal web application to catalogue a collection of vinyl records and CDs: s
     kept whole. Decided with the user: “it can be a long number, it does not have to be cut”.
   - Suggestions accumulate (stable order, most read highlighted, **Clear**).
   - **Tests: keep them light** (user's request): code without new tests is acceptable.
+- **v0.6.0** (22 November 2026): library grouped by artist (`models/artists.js`), folded by default with two
+  covers as a preview; footer replaced by a **⋯** header menu (Export, Import, Settings). The 2-per-line grid
+  on the phone is kept (user's choice).
 - **Not yet tested**: camera scanning and “from a photo” with the hosted library, in Firefox on desktop and on Android.
 
 ## Discogs token (decided 22 November 2026)

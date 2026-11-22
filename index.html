@@ -11,7 +11,19 @@
 <body>
   <header class="topbar">
     <h1 class="brand">Panoptes</h1>
-    <button type="button" class="btn" id="open-add">Add</button>
+    <div class="topbar__actions">
+      <button type="button" class="btn btn--ghost btn--icon" id="open-menu" popovertarget="menu" aria-label="Menu">⋯</button>
+      <button type="button" class="btn" id="open-add">Add</button>
+    </div>
+    <div class="menu" id="menu" popover>
+      <button type="button" class="menu__item" id="export">Export</button>
+      <label class="menu__item">
+        Import
+        <input type="file" id="import" accept="application/json,.json" class="visually-hidden">
+      </label>
+      <button type="button" class="menu__item" id="open-settings">Settings</button>
+      <p class="version" id="version"></p>
+    </div>
   </header>
 
   <nav class="tabs" aria-label="Lists">
@@ -26,16 +38,6 @@
     </label>
     <div id="library" aria-live="polite"></div>
   </main>
-
-  <footer class="footer">
-    <button type="button" class="btn btn--ghost" id="export">Export</button>
-    <label class="btn btn--ghost">
-      Import
-      <input type="file" id="import" accept="application/json,.json" class="visually-hidden">
-    </label>
-    <button type="button" class="btn btn--ghost" id="open-settings">Settings</button>
-    <span class="version" id="version"></span>
-  </footer>
 
   <dialog id="settings-dialog" aria-labelledby="settings-title">
     <div class="dialog__head">

@@ -32,6 +32,14 @@ and note the date, browser and device in `NOTES.md`.
 - [ ] **Stop** and closing the dialog turn the camera off; the phone stays responsive (memory released).
 - [ ] For each record tried, note: where the number is, read or not, time taken, wrong characters (O/0, I/1…).
 
+## Library (on the phone)
+
+- [ ] Collection and Wishlist are grouped by artist, folded, each with up to two covers; “The Beatles” is under B.
+- [ ] Tapping an artist unfolds it; its heading stays below the top bar while scrolling; it stays unfolded after
+      adding or removing a record.
+- [ ] Typing in the filter unfolds the matching artists; clearing it folds them back.
+- [ ] **⋯** menu: Export downloads the file, Import reads one, Settings opens; the menu closes after each.
+
 ## Search and library (one browser is enough)
 
 - [ ] Barcode known to MusicBrainz (e.g. a mainstream CD): results “on MusicBrainz”, covers shown.

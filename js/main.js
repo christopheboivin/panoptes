@@ -42,6 +42,8 @@ const state = {
   relations: new Map(),
   status: STATUS.OWNED,
   filter: '',
+  /** Artist groups the user unfolded (models/artists.js keys); the others stay folded. */
+  openArtists: new Set(),
   candidates: [],
   candidatesSource: '',
   resultsMode: RESULTS.EDITIONS,
@@ -99,10 +101,8 @@ function matchesFilter(record, filter) {
 }
 
 function render() {
-  const visible = state.records
-    .filter((r) => r.status === state.status && matchesFilter(r, state.filter))
-    .sort((a, b) => a.artist.localeCompare(b.artist) || a.title.localeCompare(b.title));
-  els.library.innerHTML = renderLibrary(visible, state, state.relations);
+  const visible = state.records.filter((r) => r.status === state.status && matchesFilter(r, state.filter));
+  els.library.innerHTML = renderLibrary(visible, state, state.relations, state.openArtists);
 
   for (const status of Object.values(STATUS)) {
     $(`count-${status}`).textContent = state.records.filter((r) => r.status === status).length;
@@ -746,8 +746,25 @@ function bindEvents() {
     renderPicker();
   });
 
+  // Folding an artist group: remembered so that re-rendering keeps it (not while filtering: all unfolded).
+  // 'toggle' does not bubble: listen in the capture phase.
+  els.library.addEventListener('toggle', (event) => {
+    const group = event.target;
+    if (!group.matches?.('details[data-artist]') || state.filter) return;
+    if (group.open) state.openArtists.add(group.dataset.artist);
+    else state.openArtists.delete(group.dataset.artist);
+  }, true);
+
+  // Header menu: close it once an item is chosen.
+  const menu = $('menu');
+  const closeMenu = () => { if (menu.matches(':popover-open')) menu.hidePopover(); };
+  menu.addEventListener('click', (event) => {
+    if (event.target.closest('button.menu__item')) closeMenu();
+  });
+
   $('export').addEventListener('click', () => exportLibrary().catch((error) => toast(error.message)));
   $('import').addEventListener('change', (event) => {
+    closeMenu();
     const [file] = event.target.files;
     event.target.value = '';
     if (file) importLibrary(file);

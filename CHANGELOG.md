@@ -4,6 +4,14 @@ Format: [Keep a Changelog](https://keepachangelog.com/). Versions follow `APP_VE
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-11-22
+
+### Changed
+- Collection and Wishlist are grouped by artist (“The” ignored for sorting), records by year then title.
+  Groups are folded by default and show up to two covers as a preview; tapping an artist unfolds it, and the
+  heading stays at the top while scrolling its records. While filtering, every matching group is unfolded.
+- Export, Import, Settings and the version number moved from the page footer to a **⋯** menu in the header.
+
 ## [0.5.1] - 2026-11-22
 
 ### Fixed

@@ -11,6 +11,7 @@
   --accent-ink: light-dark(#ffffff, #1a1a1a);
   --radius: 10px;
   --gap: 12px;
+  --topbar: 68px;
 }
 
 * { box-sizing: border-box; min-width: 0; }
@@ -55,10 +56,28 @@ input[type="text"], input[type="search"], input[type="password"] {
 .topbar {
   position: sticky; top: 0; z-index: 2;
   display: flex; align-items: center; justify-content: space-between; gap: var(--gap);
-  padding: 12px max(4vw, 16px);
+  height: var(--topbar); padding: 0 max(4vw, 16px);
   background: var(--bg); border-bottom: 1px solid var(--line);
 }
 .brand { font-size: 22px; letter-spacing: -0.01em; }
+.topbar__actions { display: flex; gap: 8px; }
+.btn--icon { width: 44px; padding: 0; font-size: 22px; line-height: 1; }
+
+/* Header menu (popover): Export, Import, Settings. */
+.menu {
+  position: fixed; inset: auto; top: calc(var(--topbar) - 4px); right: max(4vw, 16px); margin: 0;
+  min-width: 180px; padding: 6px; display: none; flex-direction: column;
+  border: 1px solid var(--line); border-radius: var(--radius);
+  background: var(--surface); color: var(--ink); box-shadow: 0 8px 24px rgb(0 0 0 / 0.2);
+}
+.menu:popover-open { display: flex; }
+.menu__item {
+  display: flex; align-items: center; min-height: 44px; padding: 0 12px;
+  border: 0; border-radius: 6px; background: transparent; color: inherit;
+  font: inherit; text-align: left; cursor: pointer;
+}
+.menu__item:hover, .menu__item:focus-visible, .menu__item:focus-within { background: var(--bg); }
+.version { margin: 4px 12px 2px; color: var(--muted); font-size: 13px; }
 
 .tabs { display: flex; gap: 8px; padding: 12px max(4vw, 16px) 0; }
 .tab {
@@ -71,11 +90,6 @@ input[type="text"], input[type="search"], input[type="password"] {
 .content { padding: 12px max(4vw, 16px) 24px; max-width: 1240px; margin: 0 auto; }
 .filter { display: block; margin-bottom: 16px; }
 
-.footer {
-  display: flex; flex-wrap: wrap; align-items: center; gap: var(--gap);
-  padding: 16px max(4vw, 16px) 32px; border-top: 1px solid var(--line);
-}
-.version { margin-left: auto; color: var(--muted); font-size: 13px; }
 
 /* ---------- Cards ---------- */
 
@@ -100,6 +114,24 @@ input[type="text"], input[type="search"], input[type="password"] {
 .card__hint { margin-top: 4px; color: var(--accent); font-size: 13px; font-weight: 600; }
 
 .empty { padding: 32px 0; color: var(--muted); text-align: center; }
+
+/* ---------- Library grouped by artist ---------- */
+
+.artist { border-bottom: 1px solid var(--line); }
+.artist__head {
+  position: sticky; top: var(--topbar); z-index: 1;
+  display: flex; align-items: center; gap: var(--gap); min-height: 64px; padding: 8px 0;
+  background: var(--bg); cursor: pointer; list-style: none;
+}
+.artist__head::-webkit-details-marker { display: none; }
+.artist__head::after { content: '▸'; margin-left: auto; color: var(--muted); font-size: 18px; }
+.artist[open] > .artist__head::after { content: '▾'; }
+.artist__previews { display: flex; gap: 4px; flex: none; }
+.cover--thumb { width: 48px; height: 48px; border-radius: 4px; }
+.artist__text { display: grid; min-width: 0; }
+.artist__name { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.artist__count { color: var(--muted); font-size: 13px; }
+.artist > .grid { padding-bottom: 16px; }
 
 /* ---------- Add dialog ---------- */
 

@@ -8,6 +8,7 @@
 
 import { STATUS } from '../models/record.js';
 import { isCertain } from '../models/match.js';
+import { groupByArtist } from '../models/artists.js';
 
 const ESCAPES = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
 
@@ -82,10 +83,11 @@ function hintLines(hints) {
 }
 
 /** Cover with fallback URLs (handled by handleCoverError in main.js). */
-function cover(coverUrls = []) {
+function cover(coverUrls = [], extraClass = '') {
   const [first, ...fallbacks] = coverUrls;
-  if (!first) return '<div class="cover cover--empty" aria-hidden="true"></div>';
-  return `<img class="cover" src="${escapeHtml(first)}" data-fallbacks="${escapeHtml(fallbacks.join(' '))}"
+  const className = `cover${extraClass ? ` ${extraClass}` : ''}`;
+  if (!first) return `<div class="${className} cover--empty" aria-hidden="true"></div>`;
+  return `<img class="${className}" src="${escapeHtml(first)}" data-fallbacks="${escapeHtml(fallbacks.join(' '))}"
     alt="" loading="lazy" width="250" height="250">`;
 }
 
@@ -116,8 +118,9 @@ function recordCard(record, relations) {
  * @param {object[]} records - records to display
  * @param {{ status: string, filter: string }} view
  * @param {Map<string, object>} [relationsById] - findRelations() result per record id
+ * @param {Set<string>} [openArtists] - keys of the unfolded artist groups (folded by default)
  */
-export function renderLibrary(records, { status, filter }, relationsById = new Map()) {
+export function renderLibrary(records, { status, filter }, relationsById = new Map(), openArtists = new Set()) {
   if (records.length === 0) {
     const empty = filter
       ? 'No record matches your search.'
@@ -126,7 +129,21 @@ export function renderLibrary(records, { status, filter }, relationsById = new M
         : 'Your collection is empty. Add your first record with the “Add” button.';
     return `<p class="empty">${empty}</p>`;
   }
-  return `<ul class="grid">${records.map((record) => recordCard(record, relationsById.get(record.id))).join('')}</ul>`;
+  // While filtering, every group shown is unfolded.
+  const isOpen = (key) => Boolean(filter) || openArtists.has(key);
+  return groupByArtist(records).map(({ key, artist, records: own }) => {
+    const previews = [...own.filter((r) => r.coverUrls?.length), ...own.filter((r) => !r.coverUrls?.length)].slice(0, 2);
+    return `<details class="artist" data-artist="${escapeHtml(key)}"${isOpen(key) ? ' open' : ''}>
+    <summary class="artist__head">
+      <span class="artist__previews">${previews.map((r) => cover(r.coverUrls, 'cover--thumb')).join('')}</span>
+      <span class="artist__text">
+        <span class="artist__name">${escapeHtml(artist)}</span>
+        <span class="artist__count">${count(own.length, 'record', 'records')}</span>
+      </span>
+    </summary>
+    <ul class="grid">${own.map((record) => recordCard(record, relationsById.get(record.id))).join('')}</ul>
+  </details>`;
+  }).join('');
 }
 
 /**
