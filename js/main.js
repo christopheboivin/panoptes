@@ -19,10 +19,10 @@ import { identifyImage, hasImageIdentifiers } from './identify/index.js';
 import { startLiveScan } from './scanner/camera.js';
 import { startLiveOcr } from './scanner/ocr-scan.js';
 import { onOcrProgress, releaseOcr } from './scanner/ocr-engine.js';
-import { extractCatalogNumbers } from './models/catno.js';
+import { extractCatalogNumbers, mergeSuggestions, bestSuggestion } from './models/catno.js';
 import { readBarcodeFromImage } from './scanner/barcode-engine.js';
 import {
-  renderLibrary, renderCandidates, renderAlbums, renderEditions, renderFilterOptions, renderOcrSuggestions,
+  renderLibrary, renderCandidates, renderAlbums, renderEditions, renderFilterOptions,
 } from './ui/render.js';
 
 const library = createLibrary(db);
@@ -55,8 +55,8 @@ const state = {
   stopScan: null,
   /** Catalogue-number reading: vertical frame (spine)? */
   ocrVertical: false,
-  /** Last suggestions shown: { catalogNumbers, barcode } (see models/catno.js). */
-  ocrSuggestions: { catalogNumbers: [], barcode: '' },
+  /** Suggestions accumulated since the reading started: [{ value, kind, hits }] (see models/catno.js). */
+  ocrSuggestions: [],
 };
 
 const $ = (id) => document.getElementById(id);
@@ -325,9 +325,35 @@ function ocrFrameGeometry() {
 }
 
 /**
- * Shows what the last reading saw and, when it is confident enough, the
- * catalogue numbers found. Suggestions are kept until better ones arrive, and
- * only redrawn when they change (a redraw under the finger would lose the tap).
+ * Updates the suggestion buttons in place: existing buttons are neither
+ * moved nor redrawn (a redraw under the finger would lose the tap), new ones
+ * are added at the end, and the suggestion read most often is highlighted.
+ */
+function showOcrSuggestions(list) {
+  const keyOf = (suggestion) => `${suggestion.kind}:${suggestion.value}`;
+  const keys = new Set(list.map(keyOf));
+  for (const button of [...els.ocrSuggestions.children]) {
+    if (!keys.has(button.dataset.key)) button.remove();
+  }
+  const best = bestSuggestion(list);
+  for (const suggestion of list) {
+    const key = keyOf(suggestion);
+    let button = [...els.ocrSuggestions.children].find((child) => child.dataset.key === key);
+    if (!button) {
+      button = document.createElement('button');
+      button.type = 'button';
+      button.dataset.key = key;
+      button.dataset[suggestion.kind] = suggestion.value; // data-catno or data-barcode
+      button.textContent = suggestion.kind === 'barcode' ? `Barcode ${suggestion.value}` : suggestion.value;
+      els.ocrSuggestions.append(button);
+    }
+    button.className = suggestion === best ? 'btn' : 'btn btn--ghost';
+  }
+}
+
+/**
+ * Shows what the last reading saw and, when it is confident enough, adds the
+ * catalogue numbers found to the suggestions, which stay until “Clear”.
  */
 function showOcrReading({ text, confidence }) {
   const line = text.replace(/\s+/g, ' ').trim();
@@ -335,16 +361,19 @@ function showOcrReading({ text, confidence }) {
   if (confidence < OCR_MIN_CONFIDENCE) return;
   const found = extractCatalogNumbers(text);
   if (found.catalogNumbers.length === 0 && !found.barcode) return;
-  if (JSON.stringify(found) === JSON.stringify(state.ocrSuggestions)) return;
-  state.ocrSuggestions = found;
-  els.ocrSuggestions.innerHTML = renderOcrSuggestions(found);
+  state.ocrSuggestions = mergeSuggestions(state.ocrSuggestions, found);
+  showOcrSuggestions(state.ocrSuggestions);
+}
+
+function clearOcrSuggestions() {
+  state.ocrSuggestions = [];
+  els.ocrSuggestions.replaceChildren();
 }
 
 async function startOcr() {
   stopScanning();
   const session = scanSession;
-  state.ocrSuggestions = { catalogNumbers: [], barcode: '' };
-  els.ocrSuggestions.innerHTML = '';
+  clearOcrSuggestions();
   els.ocrRead.textContent = 'Preparing the text reader…';
   els.ocr.hidden = false;
   setStatus('');
@@ -640,6 +669,7 @@ function bindEvents() {
   $('start-ocr').addEventListener('click', startOcr);
   $('stop-ocr').addEventListener('click', () => { stopScanning(); setStatus(''); });
   els.ocrRotate.addEventListener('click', toggleOcrRotation);
+  $('ocr-clear').addEventListener('click', clearOcrSuggestions);
   els.ocrSuggestions.addEventListener('click', (event) => {
     const button = event.target.closest('button');
     if (!button) return;

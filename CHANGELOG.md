@@ -4,6 +4,19 @@ Format: [Keep a Changelog](https://keepachangelog.com/). Versions follow `APP_VE
 
 ## [Unreleased]
 
+## [0.5.1] - 2026-11-22
+
+### Fixed
+- Long catalogue numbers read by OCR (e.g. “7243 8 57826 2 7”, 16 digits) were dropped or cut into fragments.
+  The suggestion rules now follow the MusicBrainz description of a catalogue number (letters followed by numbers,
+  no length limit, digits-only allowed unless it is a valid barcode, Label Codes excluded) and keep the number
+  whole, a single misread letter between digit groups included.
+
+### Changed
+- OCR suggestions accumulate instead of being replaced at each reading: they keep their place, the one read
+  most often is highlighted, and a **Clear** button starts over. Suggestions are offered as printed (no more
+  compact variant).
+
 ## [0.5.0] - 2026-11-22
 
 ### Added

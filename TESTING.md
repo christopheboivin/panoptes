@@ -23,7 +23,9 @@ and note the date, browser and device in `NOTES.md`.
 - [ ] CD: back insert, spine.
 - [ ] Vinyl centre label (small or curved print): note what works and what does not.
 - [ ] Low light, glossy sleeve, slightly tilted record.
-- [ ] Words around the number (“STEREO”, label name) are not offered.
+- [ ] Words around the number (“STEREO”, label name) are not offered first.
+- [ ] A long number (CD numbers like “7243 8 57826 2 7”) is offered whole.
+- [ ] Suggestions stay put while aiming; the one read most often is highlighted; **Clear** empties them.
 - [ ] A barcode inside the frame is offered as **Barcode …**.
 - [ ] Tapping a suggestion stops the camera, fills **Catalogue number**, searches nothing before **Search**.
 - [ ] **I own it…** then opens the picker already filtered on that number.

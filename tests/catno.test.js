@@ -1,45 +1,26 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { extractCatalogNumbers } from '../js/models/catno.js';
+import { extractCatalogNumbers, mergeSuggestions, bestSuggestion } from '../js/models/catno.js';
 import { frameToVideoRect, ocrImageSize } from '../js/scanner/frame.js';
 
 const numbers = (text) => extractCatalogNumbers(text).catalogNumbers;
 
-test('a clean catalogue number, with its compact form', () => {
-  assert.deepEqual(numbers('PGLP 21\n'), ['PGLP 21', 'PGLP21']);
-  assert.deepEqual(numbers('PGLP21'), ['PGLP21']);
-  assert.deepEqual(numbers('CL 1355'), ['CL 1355', 'CL1355']); // not “1355” alone
-  assert.equal(numbers('2C 064-12345')[0], '2C 064-12345');
+test('catalogue numbers are offered whole, as printed, whatever their length', () => {
+  assert.equal(numbers('PGLP 21\n')[0], 'PGLP 21');
   assert.equal(numbers('CDP 7 46001 2')[0], 'CDP 7 46001 2');
-});
-
-test('neighbouring words are left out', () => {
-  assert.equal(numbers('CAT. NO. PGLP 21')[0], 'PGLP 21');
+  assert.equal(numbers('7243 8 57826 2 7')[0], '7243 8 57826 2 7');
+  assert.deepEqual(numbers('7243 B 57826 2 7'), ['7243 B 57826 2 7']); // misread 8, not cut
+  assert.equal(numbers('1234567890123456')[0], '1234567890123456');
   assert.equal(numbers('STEREO PCS 7088')[0], 'PCS 7088');
-  assert.equal(numbers('CL 1355 LP')[0], 'CL 1355');
-  assert.equal(numbers('COLUMBIA CL 1355 MONO')[0], 'CL 1355');
+  assert.equal(numbers('CAT. NO. PGLP 21')[0], 'PGLP 21');
+  assert.deepEqual(numbers('LC 16158'), []); // a Label Code
 });
 
-test('OCR noise is cleaned up', () => {
-  assert.equal(numbers('  |PGLP 21.\n')[0], 'PGLP 21');
-  assert.equal(numbers('pglp 21')[0], 'PGLP 21');
-  assert.equal(numbers('— KLP-893 —')[0], 'KLP-893');
-});
-
-test('years, lone letters and long digit runs are not catalogue numbers', () => {
-  assert.deepEqual(numbers('1977'), []);
-  assert.deepEqual(numbers('STEREO'), []);
-  assert.deepEqual(numbers(''), []);
-  assert.deepEqual(numbers('5099902987026'), []);
-});
-
-test('a number spelt twice is offered once', () => {
-  const result = numbers('CL 1355\nCL-1355');
-  assert.equal(result.filter((n) => n.replace(/\W/g, '') === 'CL1355').length, 2); // “CL 1355” and its compact form
-});
-
-test('suggestions are limited', () => {
-  assert.ok(numbers('AB 12 CD 34 EF 56 GH 78 IJ 90').length <= 4);
+test('suggestions accumulate and the most read stands out', () => {
+  let list = mergeSuggestions([], { catalogNumbers: ['PGLP 21'], barcode: '' });
+  list = mergeSuggestions(list, { catalogNumbers: ['PGLP 2I', 'PGLP 21'], barcode: '' });
+  assert.deepEqual(list.map((s) => [s.value, s.hits]), [['PGLP 21', 2], ['PGLP 2I', 1]]);
+  assert.equal(bestSuggestion(list).value, 'PGLP 21');
 });
 
 test('a valid barcode in the frame is offered as a barcode', () => {

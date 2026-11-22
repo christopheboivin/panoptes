@@ -228,19 +228,6 @@ export function renderEditions(items) {
   }).join('');
 }
 
-/**
- * Buttons offering what OCR read: catalogue numbers (data-catno), and a
- * barcode if the frame held a valid one (data-barcode).
- * @param {{ catalogNumbers: string[], barcode: string }} suggestions - see models/catno.js
- */
-export function renderOcrSuggestions({ catalogNumbers, barcode }) {
-  const numbers = catalogNumbers.map((catno) => `<button type="button" class="btn btn--ghost" data-catno="${escapeHtml(catno)}">${escapeHtml(catno)}</button>`);
-  const code = barcode
-    ? [`<button type="button" class="btn btn--ghost" data-barcode="${escapeHtml(barcode)}">Barcode ${escapeHtml(barcode)}</button>`]
-    : [];
-  return [...numbers, ...code].join('');
-}
-
 /** <option>s of a picker filter: “All …” then each value with its count. */
 export function renderFilterOptions(allLabel, options, selected = '') {
   const all = `<option value="">${escapeHtml(allLabel)}</option>`;

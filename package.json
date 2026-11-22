@@ -1,6 +1,6 @@
 {
   "name": "panoptes",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "private": true,
   "description": "Personal library of vinyl records and CDs, with barcode scanning and a wishlist.",
   "engines": {

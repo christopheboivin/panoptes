@@ -32,7 +32,7 @@ A personal web application to catalogue a collection of vinyl records and CDs: s
   - `schemaVersion` stays 1 (`groupId` is optional; no older app version is in use).
   - Later: per-copy details (condition, purchase date, price, notes), “group by album” view.
 
-## Current state (v0.5.0)
+## Current state (v0.5.1)
 
 - **Live at <https://christopheboivin.github.io/panoptes/>**, repository <https://github.com/christopheboivin/panoptes>
   (public, MIT licence, first commit `522cde0`).
@@ -70,6 +70,12 @@ A personal web application to catalogue a collection of vinyl records and CDs: s
   - Checked in the preview at 375 px with a simulated camera (drawn images): back cover and spine read correctly,
     decoy words outside the frame ignored, no CDN request, picker narrowed from 138 to 4 editions on “CL 1355”.
   - **Not checked**: a real camera and real records. That is the purpose of step 1.
+- **v0.5.1** (22 November 2026), after the user's first tries on real records:
+  - Long numbers (~16 digits) were read but not offered: suggestion rules rewritten on the MusicBrainz description
+    of a catalogue number (https://musicbrainz.org/doc/Release/Catalog_Number): no length limit, digits-only allowed,
+    kept whole. Decided with the user: “it can be a long number, it does not have to be cut”.
+  - Suggestions accumulate (stable order, most read highlighted, **Clear**).
+  - **Tests: keep them light** (user's request): code without new tests is acceptable.
 - **Not yet tested**: camera scanning and “from a photo” with the hosted library, in Firefox on desktop and on Android.
 
 ## Discogs token (decided 22 November 2026)
