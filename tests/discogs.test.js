@@ -4,7 +4,7 @@ import {
   toCandidate, splitTitle, cleanArtistName, formatDescriptions, pickBarcode, buildSearchParams, createDiscogsProvider,
 } from '../js/providers/discogs.js';
 
-// Extrait représentatif d'un résultat de /database/search?type=release.
+// Representative excerpt of a /database/search?type=release result.
 const result = {
   id: 28457123,
   title: 'Peter Gabriel - I/O',
@@ -19,7 +19,7 @@ const result = {
   thumb: 'https://i.discogs.com/thumb.jpeg',
 };
 
-test('toCandidate convertit un résultat Discogs', () => {
+test('toCandidate converts a Discogs result', () => {
   const candidate = toCandidate(result);
   assert.equal(candidate.artist, 'Peter Gabriel');
   assert.equal(candidate.title, 'I/O');
@@ -32,29 +32,29 @@ test('toCandidate convertit un résultat Discogs', () => {
   assert.deepEqual(candidate.coverUrls, ['https://i.discogs.com/cover.jpeg', 'https://i.discogs.com/thumb.jpeg']);
 });
 
-test('toCandidate tolère un résultat incomplet et ignore les images vides', () => {
-  const candidate = toCandidate({ id: 1, title: 'Sans artiste', catno: 'none', cover_image: 'https://st.discogs.com/images/spacer.gif' });
-  assert.equal(candidate.title, 'Sans artiste');
+test('toCandidate tolerates an incomplete result and ignores empty images', () => {
+  const candidate = toCandidate({ id: 1, title: 'No artist', catno: 'none', cover_image: 'https://st.discogs.com/images/spacer.gif' });
+  assert.equal(candidate.title, 'No artist');
   assert.equal(candidate.artist, '');
   assert.equal(candidate.catno, '');
   assert.equal(candidate.format, '');
   assert.deepEqual(candidate.coverUrls, []);
 });
 
-test('splitTitle et cleanArtistName gèrent les homonymes et les tirets', () => {
+test('splitTitle and cleanArtistName handle namesakes and dashes', () => {
   assert.deepEqual(splitTitle('Genesis (2) - Live - Paris'), { artist: 'Genesis', title: 'Live - Paris' });
   assert.equal(cleanArtistName('Yes (3)'), 'Yes');
   assert.equal(cleanArtistName('Blink-182'), 'Blink-182');
 });
 
-test('formatDescriptions et pickBarcode', () => {
+test('formatDescriptions and pickBarcode', () => {
   assert.equal(formatDescriptions(['CD', 'Album'], 1), 'CD, Album');
   assert.equal(formatDescriptions([], 2), '');
   assert.equal(pickBarcode(['IFPI L123', '5 099902 987026']), '5099902987026');
   assert.equal(pickBarcode(['PGLP21 A1']), '');
 });
 
-test('buildSearchParams ignore les critères vides et ajoute le jeton', () => {
+test('buildSearchParams ignores empty criteria and adds the token', () => {
   const params = buildSearchParams({ artist: ' Peter Gabriel ', title: '', catno: 'PGLP21' }, 'secret');
   assert.equal(params.get('type'), 'release');
   assert.equal(params.get('artist'), 'Peter Gabriel');
@@ -67,7 +67,7 @@ function fakeResponse(status, body = {}) {
   return { status, ok: status >= 200 && status < 300, json: async () => body };
 }
 
-test('sans jeton, Discogs n\'est pas configuré et n\'appelle pas le réseau', async () => {
+test('without a token, Discogs is not configured and makes no network call', async () => {
   let calls = 0;
   const discogs = createDiscogsProvider({ getToken: () => '', fetchFn: async () => { calls += 1; } });
   assert.equal(discogs.isConfigured(), false);
@@ -75,7 +75,7 @@ test('sans jeton, Discogs n\'est pas configuré et n\'appelle pas le réseau', a
   assert.equal(calls, 0);
 });
 
-test('searchByBarcode interroge Discogs avec le jeton et convertit les résultats', async () => {
+test('searchByBarcode queries Discogs with the token and converts the results', async () => {
   const urls = [];
   const discogs = createDiscogsProvider({
     getToken: () => 'secret',
@@ -88,7 +88,7 @@ test('searchByBarcode interroge Discogs avec le jeton et convertit les résultat
   assert.equal(urls[0].searchParams.get('token'), 'secret');
 });
 
-test('un jeton refusé produit un message explicite', async () => {
+test('a rejected token gives an explicit message', async () => {
   const discogs = createDiscogsProvider({ getToken: () => 'faux', fetchFn: async () => fakeResponse(401) });
-  await assert.rejects(discogs.searchByText({ artist: 'X' }), /jeton/);
+  await assert.rejects(discogs.searchByText({ artist: 'X' }), /token/);
 });

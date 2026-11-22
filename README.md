@@ -1,99 +1,101 @@
 # Panoptes
 
-Bibliothèque personnelle de vinyles et CD : scan du code-barres, collection et liste d'envies.
-Application web statique en JavaScript natif (modules ES) : pas de framework, pas d'étape de compilation.
+A personal library for vinyl records and CDs: barcode scanning, a collection and a wishlist.
+Static web application written in plain JavaScript (ES modules): no framework, no build step.
 
-Navigateur cible : **Firefox** (ordinateur et Android). Chrome fonctionne aussi ; Safari/iPhone n'est pas visé.
+**Live app: <https://christopheboivin.github.io/panoptes/>**
 
-## Fonctionnalités
+Target browser: **Firefox** (desktop and Android). Chrome also works; Safari/iPhone is not supported.
 
-- Scan en temps réel du code-barres avec la caméra, ou à partir d'une photo. Le code lu est affiché avec le résultat de sa clé de contrôle ; MusicBrainz n'est interrogé qu'après confirmation.
-- Recherche manuelle par code-barres, artiste, titre ou numéro de catalogue (ex. PGLP21, utile pour les vinyles anciens sans code-barres).
-- Deux sources interrogées dans l'ordre : [MusicBrainz](https://musicbrainz.org), puis [Discogs](https://www.discogs.com) si MusicBrainz ne trouve rien (Discogs est bien plus complet pour les vinyles). La source de chaque résultat est indiquée.
-- Si aucune source ne connaît le code-barres, recherche par artiste, titre ou numéro de catalogue : le code scanné est alors enregistré avec le disque choisi.
-- Deux listes : **Collection** et **Envies**, avec bouton « Je l'ai » pour passer un disque de l'une à l'autre.
-- Données issues de MusicBrainz et Discogs ; pochettes de [Cover Art Archive](https://coverartarchive.org) et de Discogs.
-- Stockage local dans le navigateur (IndexedDB), avec **export/import JSON** pour les sauvegardes et le transfert entre appareils.
+## Features
 
-## Activer Discogs
+- Real-time barcode scanning with the camera, or from a photo (**From a photo**). The scanned code is displayed together with the result of its check-digit validation; nothing is looked up until the user confirms.
+- Manual search by barcode, artist, title or catalogue number (e.g. PGLP21, useful for older records without a barcode).
+- Two data sources, queried in order: [MusicBrainz](https://musicbrainz.org), then [Discogs](https://www.discogs.com) if MusicBrainz finds nothing (Discogs has far better coverage of vinyl). The source of each result is shown.
+- If no source knows the barcode, search by artist, title or catalogue number instead: the scanned code is then saved with the record you pick.
+- Two lists: **Collection** and **Wishlist**, with a **Got it** button to move a record from the wishlist to the collection.
+- Data from MusicBrainz and Discogs; cover art from [Cover Art Archive](https://coverartarchive.org) and Discogs.
+- Local storage in the browser (IndexedDB), with **JSON export/import** for backups and for moving data between devices.
 
-La recherche Discogs exige un jeton personnel gratuit :
+## Enabling Discogs
 
-1. Se connecter à Discogs, ouvrir <https://www.discogs.com/settings/developers> et cliquer sur « Generate new token ».
-2. Dans Panoptes, bouton **Réglages**, coller le jeton et enregistrer.
+Discogs search requires a free personal access token:
 
-Le jeton est conservé dans le navigateur (localStorage) de chaque appareil. Il n'est **jamais** inclus dans l'export JSON ni dans le dépôt, et n'est envoyé qu'à Discogs (en HTTPS). Il donne accès au compte Discogs : en cas de doute, le régénérer sur la même page. Sans jeton, seul MusicBrainz est interrogé.
+1. Sign in to Discogs, open <https://www.discogs.com/settings/developers> and click “Generate new token”.
+2. In Panoptes, open **Settings**, paste the token and save.
 
-Sur GitHub Pages, tous les projets d'un même compte partagent l'origine `<compte>.github.io`, donc le même localStorage : n'y publier que du code de confiance, ou utiliser un domaine personnalisé.
+The token is kept in the browser's localStorage on each device. It is **never** included in the JSON export or in the repository, and it is only ever sent to Discogs (over HTTPS). It grants access to your Discogs account: if in doubt, regenerate it on the same page. Without a token, only MusicBrainz is queried.
 
-## Lancer en local
+On GitHub Pages, all projects of the same account share the `<account>.github.io` origin, and therefore the same localStorage: only publish trusted code there, or use a custom domain.
+
+## Running locally
 
 ```sh
-py -m http.server 8000      # Windows (lanceur Python officiel)
+py -m http.server 8000      # Windows (official Python launcher)
 python3 -m http.server 8000 # Linux / macOS
 ```
 
-Sous Windows, `python` peut ouvrir le Microsoft Store au lieu de Python : c'est un raccourci du système. Utiliser `py`, ou désactiver ce raccourci dans *Paramètres > Applications > Paramètres d'applications avancés > Alias d'exécution d'application*.
+On Windows, `python` may open the Microsoft Store instead of Python: this is a system shortcut. Use `py`, or disable the shortcut in *Settings > Apps > Advanced app settings > App execution aliases*.
 
-Puis ouvrir <http://localhost:8000>. La caméra fonctionne sur `localhost` ; ailleurs, une adresse **HTTPS** est obligatoire (GitHub Pages convient).
+Then open <http://localhost:8000>. The camera works on `localhost`; anywhere else, an **HTTPS** address is required (GitHub Pages is fine).
 
-Tests unitaires (Node.js 20 ou plus récent, aucune dépendance) :
+Unit tests (Node.js 20 or later, no dependencies):
 
 ```sh
 npm test
 ```
 
-## Publier sur GitHub Pages
+## Publishing on GitHub Pages
 
-1. Pousser le dépôt sur GitHub.
-2. *Settings → Pages* : source « Deploy from a branch », branche `main`, dossier `/ (root)`.
-3. Le site est publié à l'adresse `https://<compte>.github.io/panoptes/` (le fichier `.nojekyll` évite tout traitement par Jekyll).
+1. Push the repository to GitHub.
+2. *Settings → Pages*: source “Deploy from a branch”, branch `main`, folder `/ (root)`.
+3. The site is published at `https://<account>.github.io/panoptes/` (the `.nojekyll` file disables Jekyll processing).
 
-Le dépôt ne contient que le code. La bibliothèque reste dans le navigateur de chaque appareil : **pense à exporter régulièrement**.
+The repository only contains the code. Your library stays in each device's browser: **remember to export it regularly**.
 
 ## Architecture
 
 ```
 index.html, css/style.css
 js/
-  main.js                  État de l'écran et événements (aucune logique métier)
-  config.js                Réglages centralisés
-  models/record.js         Forme d'un disque, validation
-  models/barcode.js        Nettoyage et clé de contrôle des codes-barres
-  storage/db.js            Accès IndexedDB (seul module qui le connaît)
-  storage/library.js       Règles métier : ajout, statut, export/import
-  storage/settings.js      Réglages de l'appareil (jeton Discogs), hors export
-  providers/catalog.js     Interroge les sources dans l'ordre, s'arrête au premier résultat
-  providers/musicbrainz.js Source MusicBrainz : recherche et normalisation
-  providers/discogs.js     Source Discogs (jeton personnel requis)
-  identify/index.js        Registre des identificateurs visuels (photo sans code-barres)
-  scanner/barcode-engine.js Lecture de codes-barres (natif ou bibliothèque de secours)
-  scanner/camera.js        Scan en temps réel
-  ui/render.js             Génération du HTML (avec échappement)
-vendor/                    Bibliothèques tierces hébergées (voir vendor/README.md)
-tests/                     Tests unitaires (node --test)
+  main.js                   Screen state and event handling (no business logic)
+  config.js                 Centralised settings
+  models/record.js          Shape of a record, validation
+  models/barcode.js         Barcode clean-up and check-digit validation
+  storage/db.js             IndexedDB access (the only module that knows about it)
+  storage/library.js        Business rules: add, change status, export/import
+  storage/settings.js       Per-device settings (Discogs token), never exported
+  providers/catalog.js      Queries the sources in order, stops at the first result
+  providers/musicbrainz.js  MusicBrainz source: search and normalisation
+  providers/discogs.js      Discogs source (personal token required)
+  identify/index.js         Registry of visual identifiers (photo without a barcode)
+  scanner/barcode-engine.js Barcode reading (native or fallback library)
+  scanner/camera.js         Real-time scanning
+  ui/render.js              HTML generation (with escaping)
+vendor/                     Hosted third-party libraries (see vendor/README.md)
+tests/                      Unit tests (node --test)
 ```
 
-### Points d'extension
+### Extension points
 
-- **Scan visuel de pochette** : créer `js/identify/cover.js` respectant le contrat décrit dans `js/identify/index.js`, puis l'ajouter à la liste `IDENTIFIERS`. Le bouton « Depuis une photo » l'utilisera automatiquement quand aucun code-barres n'est lisible.
-- **Autre source de données** : créer un module dans `js/providers/` exposant `{ id, name, isConfigured, searchByBarcode, searchByText }` et renvoyant des candidats au même format, puis l'ajouter à la liste passée à `createCatalog()` dans `main.js` (l'ordre de la liste est l'ordre d'interrogation).
-- **Synchronisation entre appareils** : fournir un module de stockage exposant `getAll`, `put`, `putMany` et `remove`, et le passer à `createLibrary()` dans `main.js`.
+- **Visual cover scanning**: create `js/identify/cover.js` following the contract described in `js/identify/index.js`, then add it to the `IDENTIFIERS` list. The **From a photo** button will use it automatically when no barcode can be read.
+- **Another data source**: create a module in `js/providers/` exposing `{ id, name, isConfigured, searchByBarcode, searchByText }` and returning candidates in the same format, then add it to the list passed to `createCatalog()` in `main.js` (the order of the list is the query order).
+- **Sync between devices**: provide a storage module exposing `getAll`, `put`, `putMany` and `remove`, and pass it to `createLibrary()` in `main.js`.
 
-## Dépendance externe
+## External dependency
 
-Une seule : [barcode-detector](https://github.com/Sec-ant/barcode-detector) (MIT, basée sur ZXing), chargée uniquement si le navigateur n'a pas de lecteur de codes-barres intégré. **Firefox (navigateur cible) n'en a pas** : cette bibliothèque y est donc indispensable.
+Only one: [barcode-detector](https://github.com/Sec-ant/barcode-detector) (MIT, based on ZXing), loaded only when the browser has no built-in barcode reader. **Firefox (the target browser) has none**, so this library is essential there.
 
-Elle est **hébergée dans le dépôt** (`vendor/`), avec le fichier WebAssembly du moteur ZXing qu'elle utilise : la page ne charge aucun script ni fichier depuis un serveur tiers, ce qui protège notamment le jeton Discogs. Versions, licences, empreintes et procédure de mise à jour : voir [`vendor/README.md`](vendor/README.md).
+It is **hosted in the repository** (`vendor/`), together with the WebAssembly file of the ZXing engine it uses: the page loads no script or file from any third-party server, which in particular protects the Discogs token. Versions, licences, checksums and update procedure: see [`vendor/README.md`](vendor/README.md).
 
 ## Licence
 
-Panoptes est distribué sous licence [MIT](LICENSE). Les bibliothèques de `vendor/` gardent leur propre licence (voir [`vendor/README.md`](vendor/README.md)).
+Panoptes is released under the [MIT licence](LICENSE). The libraries in `vendor/` keep their own licences (see [`vendor/README.md`](vendor/README.md)).
 
-## Format d'export
+## Export format
 
 ```json
 { "app": "panoptes", "schemaVersion": 1, "exportedAt": "…", "records": [ … ] }
 ```
 
-L'import fusionne : un disque déjà présent (même identifiant) est remplacé, les autres sont ajoutés.
+Import merges: a record that already exists (same identifier) is replaced; the others are added.

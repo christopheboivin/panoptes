@@ -1,16 +1,16 @@
 /**
- * Catalogue : interroge les sources de données dans l'ordre, et s'arrête à
- * la première qui trouve quelque chose (MusicBrainz, puis Discogs).
+ * Catalogue: queries the data sources in order and stops at the first one
+ * that finds something (MusicBrainz, then Discogs).
  *
- * Une source (voir musicbrainz.js, discogs.js) expose :
+ * A source (see musicbrainz.js, discogs.js) exposes:
  *   { id, name, isConfigured(), searchByBarcode(code), searchByText(criteria) }
  *
- * Résultat d'une recherche : { candidates, providerName, skipped, errors }
- *   - providerName : nom de la source qui a répondu (vide si aucune) ;
- *   - skipped : noms des sources non configurées (ex. Discogs sans jeton) ;
- *   - errors : erreurs des sources en échec, quand une autre a pu répondre.
- * Si aucune source ne trouve rien et qu'au moins une a échoué, la première
- * erreur est levée : l'utilisateur doit savoir que la recherche est incomplète.
+ * Search result: { candidates, providerName, skipped, errors }
+ *   - providerName: name of the source that answered (empty if none);
+ *   - skipped: names of the sources that are not configured (e.g. Discogs without a token);
+ *   - errors: errors from failing sources, when another source could answer.
+ * If no source finds anything and at least one failed, the first error is
+ * thrown: the user must know that the search is incomplete.
  */
 
 export function createCatalog(providers) {

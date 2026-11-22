@@ -1,9 +1,9 @@
 /**
- * Modèle d'un disque de la bibliothèque.
+ * Model of a record in the library.
  *
- * Un « record » est un disque possédé (collection) ou souhaité (envies).
- * Toutes les données de la bibliothèque passent par createRecord() et
- * validateRecord(), qui garantissent une forme stable et sérialisable.
+ * A record is a disc that is owned (collection) or wanted (wishlist).
+ * All library data goes through createRecord() and validateRecord(),
+ * which guarantee a stable, serialisable shape.
  */
 
 export const STATUS = Object.freeze({
@@ -13,7 +13,7 @@ export const STATUS = Object.freeze({
 
 const STATUSES = new Set(Object.values(STATUS));
 
-/** Champs texte optionnels d'un disque (toujours des chaînes, éventuellement vides). */
+/** Optional text fields of a record (always strings, possibly empty). */
 const TEXT_FIELDS = ['title', 'artist', 'year', 'format', 'label', 'catno', 'barcode', 'country', 'notes'];
 
 function newId() {
@@ -25,9 +25,9 @@ function asText(value) {
 }
 
 /**
- * Crée un disque à partir d'un candidat d'identification (voir providers/).
- * @param {object} candidate - données descriptives (titre, artiste, source…)
- * @param {string} status - STATUS.OWNED ou STATUS.WANTED
+ * Creates a record from an identification candidate (see providers/).
+ * @param {object} candidate - descriptive data (title, artist, source…)
+ * @param {string} status - STATUS.OWNED or STATUS.WANTED
  */
 export function createRecord(candidate, status, now = new Date()) {
   const timestamp = now.toISOString();
@@ -41,18 +41,18 @@ export function createRecord(candidate, status, now = new Date()) {
 }
 
 /**
- * Vérifie et normalise un disque (utilisé à la création et à l'import).
- * Lève une erreur explicite si le disque est inutilisable.
+ * Checks and normalises a record (used on creation and on import).
+ * Throws an explicit error if the record is unusable.
  */
 export function validateRecord(input) {
   if (!input || typeof input !== 'object') {
-    throw new Error('Disque invalide : objet attendu.');
+    throw new Error('Invalid record: object expected.');
   }
   if (typeof input.id !== 'string' || input.id === '') {
-    throw new Error('Disque invalide : identifiant manquant.');
+    throw new Error('Invalid record: missing identifier.');
   }
   if (!STATUSES.has(input.status)) {
-    throw new Error(`Disque invalide : statut inconnu « ${input.status} ».`);
+    throw new Error(`Invalid record: unknown status “${input.status}”.`);
   }
 
   const record = { id: input.id, status: input.status };
@@ -60,7 +60,7 @@ export function validateRecord(input) {
     record[field] = asText(input[field]);
   }
   if (!record.title) {
-    throw new Error('Disque invalide : titre manquant.');
+    throw new Error('Invalid record: missing title.');
   }
 
   record.source = input.source && typeof input.source === 'object'
@@ -74,7 +74,7 @@ export function validateRecord(input) {
   return record;
 }
 
-/** Deux disques désignent-ils la même édition (même source externe) ? */
+/** Do two records refer to the same release (same external source)? */
 export function sameRelease(a, b) {
   return Boolean(a.source?.id) && a.source.provider === b.source?.provider && a.source.id === b.source?.id;
 }

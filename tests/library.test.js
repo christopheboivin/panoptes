@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createLibrary, parseExport, STATUS } from '../js/storage/library.js';
 
-/** Stockage en mémoire respectant le contrat de js/storage/db.js. */
+/** In-memory storage following the contract of js/storage/db.js. */
 function memoryStorage() {
   const map = new Map();
   return {
@@ -13,7 +13,7 @@ function memoryStorage() {
   };
 }
 
-test("un export se réimporte à l'identique", async () => {
+test('an export can be re-imported unchanged', async () => {
   const source = createLibrary(memoryStorage());
   await source.add({ title: 'Blue Train', artist: 'John Coltrane' }, STATUS.OWNED);
   await source.add({ title: 'Mingus Ah Um', artist: 'Charles Mingus' }, STATUS.WANTED);
@@ -28,7 +28,7 @@ test("un export se réimporte à l'identique", async () => {
   );
 });
 
-test("l'import fusionne par identifiant sans doublon", async () => {
+test('import merges by identifier without duplicates', async () => {
   const lib = createLibrary(memoryStorage());
   await lib.add({ title: 'Blue Train' }, STATUS.OWNED);
   const exported = await lib.exportData();
@@ -36,16 +36,16 @@ test("l'import fusionne par identifiant sans doublon", async () => {
   assert.equal((await lib.list()).length, 1);
 });
 
-test("setStatus déplace un disque des envies vers la collection", async () => {
+test('setStatus moves a record from the wishlist to the collection', async () => {
   const lib = createLibrary(memoryStorage());
   const record = await lib.add({ title: 'Blue Train' }, STATUS.WANTED);
   await lib.setStatus(record, STATUS.OWNED);
   assert.equal((await lib.list())[0].status, STATUS.OWNED);
 });
 
-test('parseExport rejette un fichier étranger et ignore les disques invalides', () => {
-  assert.throws(() => parseExport({ records: [] }), /export Panoptes/);
-  assert.throws(() => parseExport({ app: 'panoptes', schemaVersion: 99, records: [] }), /plus récente/);
+test('parseExport rejects a foreign file and skips invalid records', () => {
+  assert.throws(() => parseExport({ records: [] }), /Panoptes export/);
+  assert.throws(() => parseExport({ app: 'panoptes', schemaVersion: 99, records: [] }), /newer version/);
   const { records, rejected } = parseExport({
     app: 'panoptes',
     schemaVersion: 1,

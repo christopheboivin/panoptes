@@ -1,72 +1,76 @@
-# Notes de reprise — Panoptes
+# Handover notes — Panoptes
 
-Fichier de passation entre conversations avec Claude. À relire en premier pour reprendre le projet.
-Dernière mise à jour : 22 novembre 2026.
+Handover file between conversations with Claude. Read this first when resuming the project.
+Last updated: 22 November 2026.
 
-## Objectif
+## Goal
 
-Application web personnelle pour cataloguer une collection de vinyles et CD : scan, bibliothèque
-(« Collection ») et liste de disques souhaités (« Envies »). Logiciel libre autant que possible.
+A personal web application to catalogue a collection of vinyl records and CDs: scanning, a library
+(“Collection”) and a list of wanted records (“Wishlist”). Free and open-source software wherever possible.
 
-## Décisions prises
+## Decisions
 
-- **Navigateur cible : Firefox** (ordinateur et Android). Chrome doit fonctionner ; Safari/iPhone non visé.
-- **Code simple et maintenable** : JavaScript natif en modules ES, sans framework ni compilation,
-  bonnes pratiques, pas de prototype jetable. Architecture extensible (voir README).
-- **Stockage local** dans le navigateur (IndexedDB) + **export/import JSON** (format versionné, fusion par identifiant).
-  Synchronisation entre appareils (serveur type PocketBase) envisagée plus tard, via un autre module de stockage.
-- **Scan en temps réel** par la caméra, et bouton « Depuis une photo ».
-- **Confirmation avant recherche** : le code lu s'affiche avec le contrôle de sa clé ; MusicBrainz n'est interrogé qu'après validation.
-- **Hébergement prévu : GitHub Pages** (HTTPS nécessaire pour la caméra). Le dépôt ne contient que le code, jamais la bibliothèque.
+- **Target browser: Firefox** (desktop and Android). Chrome must work; Safari/iPhone is not supported.
+- **Simple, maintainable code**: plain JavaScript ES modules, no framework and no build step,
+  good practices, no throwaway prototype. Extensible architecture (see README).
+- **Local storage** in the browser (IndexedDB) + **JSON export/import** (versioned format, merge by identifier).
+  Sync between devices (a server such as PocketBase) may come later, through another storage module.
+- **Real-time camera scanning**, plus a “From a photo” button.
+- **Confirmation before searching**: the scanned code is shown with its check-digit result; nothing is looked up until the user confirms.
+- **Hosting: GitHub Pages** (HTTPS is required for the camera). The repository only contains the code, never the library.
+- **Everything in English**: user interface, messages, code comments, tests and documentation (decided 22 November 2026).
 
-## État actuel (v0.2.0)
+## Current state (v0.2.0)
 
-- Fonctionnel et testé contre le vrai MusicBrainz : recherche par code-barres (formes UPC-A et EAN-13),
-  par artiste/titre, ajout en Collection ou Envies, bouton « Je l'ai », export/import.
-- Relance automatique sur les refus temporaires de MusicBrainz (erreur 503, limite de débit ~1 requête/s).
-- Si un code-barres est inconnu, l'appli propose la recherche par artiste/titre/n° de catalogue
-  et enregistre le code scanné avec le disque choisi.
-- **v0.2.0** : Discogs en seconde source (interrogé seulement si MusicBrainz ne trouve rien, via `providers/catalog.js`),
-  recherche par numéro de catalogue (MusicBrainz `catno:` et Discogs), fenêtre « Réglages » pour le jeton Discogs,
-  source affichée sous chaque résultat.
-- **Discogs testé et validé dans Firefox** par l'utilisateur (22 novembre 2026) : code-barres et n° de catalogue.
-- barcode-detector 2.2.5 et son fichier zxing_reader.wasm (zxing-wasm 1.2.7) sont **hébergés dans `vendor/`** :
-  plus aucun appel à jsDelivr. Chargement du .wasm vérifié sous Node ; reste à tester un scan dans Firefox.
-- 30 tests unitaires (`npm test`, Node.js, aucune dépendance).
-- **Non testé** : le scan caméra et « Depuis une photo » sous Firefox avec la copie hébergée.
+- **Live at <https://christopheboivin.github.io/panoptes/>**, repository <https://github.com/christopheboivin/panoptes>
+  (public, MIT licence, first commit `522cde0`).
+- Working and tested against the real MusicBrainz: search by barcode (UPC-A and EAN-13 forms),
+  by artist/title, add to Collection or Wishlist, “Got it” button, export/import.
+- Automatic retry when MusicBrainz temporarily refuses requests (HTTP 503, rate limit of about 1 request/s).
+- If a barcode is unknown, the app suggests searching by artist/title/catalogue number
+  and saves the scanned code with the chosen record.
+- **v0.2.0**: Discogs as a second source (queried only when MusicBrainz finds nothing, via `providers/catalog.js`),
+  search by catalogue number (MusicBrainz `catno:` and Discogs), “Settings” dialog for the Discogs token,
+  source shown under each result.
+- **Discogs tested and validated in Firefox** by the user (22 November 2026): barcode and catalogue number.
+- barcode-detector 2.2.5 and its zxing_reader.wasm file (zxing-wasm 1.2.7) are **hosted in `vendor/`**:
+  no more requests to jsDelivr. Loading of the .wasm file checked under Node.
+- 30 unit tests (`npm test`, Node.js, no dependencies).
+- Whole project translated into English (interface, messages, comments, tests, documentation) on 22 November 2026;
+  the IndexedDB data, the export format and the Discogs token storage are unchanged.
+- **Not yet tested**: camera scanning and “from a photo” with the hosted library, in Firefox on desktop and on Android.
 
-## Jeton Discogs (décision du 22 novembre 2026)
+## Discogs token (decided 22 November 2026)
 
-- Saisi dans l'appli (Réglages), stocké dans le localStorage de chaque appareil, jamais exporté ni dans le dépôt,
-  envoyé uniquement à Discogs en paramètre `token` (pas d'en-tête personnalisé, donc pas de requête CORS préalable).
-- C'est aussi la solution retenue pour GitHub Pages (site statique : aucun endroit où cacher un secret ;
-  un serveur relais a été écarté, contraire au principe KISS).
-- Précautions : héberger barcode-detector dans le dépôt **avant** la mise en ligne (plus aucun script tiers
-  ne pourra lire le jeton) ; tous les projets `<compte>.github.io` partagent le même localStorage.
+- Entered in the app (Settings), stored in each device's localStorage, never exported nor committed,
+  sent only to Discogs as the `token` query parameter (no custom header, so no CORS preflight request).
+- This is also the chosen approach for GitHub Pages (a static site has nowhere to hide a secret;
+  a relay server was ruled out as contrary to the KISS principle).
+- Precautions: barcode-detector is hosted in the repository, so no third-party script can read the token;
+  all `<account>.github.io` projects share the same localStorage.
 
-## Constat important
+## Key finding
 
-MusicBrainz connaît mal les codes-barres des vinyles récents. Exemple : Peter Gabriel, *i/o*,
-code 884108013632, absent de MusicBrainz ; les éditions vinyle (PGLP21, PGLPX21) n'y ont aucun code-barres.
+MusicBrainz has poor coverage of barcodes for recent vinyl releases. Example: Peter Gabriel, *i/o*,
+barcode 884108013632, missing from MusicBrainz; the vinyl editions (PGLP21, PGLPX21) have no barcode there.
+Discogs finds them.
 
-## Suite prévue, dans l'ordre
+## Next steps, in order
 
-1. **Tester un scan dans Firefox** avec barcode-detector hébergé, et vérifier (F12, onglet Réseau)
-   qu'aucune requête ne part vers jsdelivr.net.
-2. Mise en ligne sur GitHub Pages : licence **MIT** retenue (fichier LICENSE ajouté). L'utilisateur fait lui-même
-   les commits dans Git Bash, avec Claude en co-auteur (ligne `Co-Authored-By`). Dépôt public `panoptes`.
-   Tester ensuite sur Android (Firefox) : caméra via HTTPS.
-3. **OCR de la pochette** avec Tesseract.js (Apache 2.0, dans le navigateur), visant surtout le verso, la tranche
-   ou le rond central pour y lire le numéro de catalogue et le label. À brancher dans `js/identify/cover.js`.
+1. **Test on the live site**: scanning in Firefox on desktop and Android (camera over HTTPS, hosted
+   barcode-detector), and check (F12, Network tab) that no request goes to jsdelivr.net.
+   On each new device, re-enter the Discogs token and import an export if needed.
+2. **Cover OCR** with Tesseract.js (Apache 2.0, runs in the browser), aimed mainly at the back cover, the spine
+   or the centre label to read the catalogue number and the label. To be plugged into `js/identify/cover.js`.
+   Tesseract.js can be fetched via npm (reachable from Claude's workspace).
 
-Le point 3 nécessitera de récupérer Tesseract.js via npm (accessible depuis l'espace de travail de Claude).
+## Environment and conventions
 
-## Environnement et conventions
-
-- Projet : `C:\Users\chris\code\panoptes`. Terminal : Git Bash.
-- Serveur local : `python -m http.server 8000` puis <http://localhost:8000> (vérifier la commande Python disponible).
-- Les droits sur le PC (notamment la suppression) se demandent pour le dossier du projet seulement, jamais pour tout `code`.
-  Pour cela, connecter `panoptes` lui-même à la conversation plutôt que `code`.
-- Sans autorisation de suppression, Claude ne peut pas faire de commit Git (fichiers de verrou).
-- Tenir l'utilisateur informé régulièrement de l'avancement.
-- **Toujours présenter le plan et attendre la confirmation de l'utilisateur avant de modifier le code.**
+- Project: `C:\Users\chris\code\panoptes`. Terminal: Git Bash.
+- Local server: `py -m http.server 8000`, then <http://localhost:8000> (check which Python command is available).
+- Permissions on the PC (especially deletion) are requested for the project folder only, never for the whole `code` folder.
+  To do so, connect `panoptes` itself to the conversation rather than `code`.
+- **Git: the user makes the commits and pushes himself in Git Bash**, with Claude as co-author
+  (`Co-Authored-By: Claude …` line as the last paragraph of the commit message). Claude only prepares the files.
+- Keep the user regularly informed of progress.
+- **Always present the plan and wait for the user's confirmation before changing the code.**

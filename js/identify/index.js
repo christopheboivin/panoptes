@@ -1,19 +1,19 @@
 /**
- * Identification visuelle d'un disque à partir d'une photo, utilisée quand
- * aucun code-barres n'y a été lu (la lecture du code-barres, elle, passe par
- * scanner/ puis par une confirmation de l'utilisateur).
+ * Visual identification of a record from a photo, used when no barcode could
+ * be read on it (barcode reading itself goes through scanner/, then through
+ * a confirmation by the user).
  *
- * Les identificateurs sont essayés dans l'ordre ; le premier qui trouve des
- * candidats l'emporte. Pour ajouter le scan visuel de pochette, créer
- * js/identify/cover.js respectant le contrat ci-dessous et l'ajouter à la liste.
+ * Identifiers are tried in order; the first one that finds candidates wins.
+ * To add visual cover scanning, create js/identify/cover.js following the
+ * contract below and add it to the list.
  *
- * Contrat d'un identificateur :
+ * Identifier contract:
  *   { id: string, label: string,
  *     identify(image: Blob) -> Promise<{ candidates: Candidate[], detail: string }> }
  */
 
 const IDENTIFIERS = [
-  // coverIdentifier, // à venir : reconnaissance visuelle de la pochette
+  // coverIdentifier, // to come: visual recognition of the cover
 ];
 
 export function hasImageIdentifiers() {

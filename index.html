@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -11,72 +11,72 @@
 <body>
   <header class="topbar">
     <h1 class="brand">Panoptes</h1>
-    <button type="button" class="btn" id="open-add">Ajouter</button>
+    <button type="button" class="btn" id="open-add">Add</button>
   </header>
 
-  <nav class="tabs" aria-label="Listes">
+  <nav class="tabs" aria-label="Lists">
     <button type="button" class="tab" data-status="owned" aria-pressed="true">Collection <span class="count" id="count-owned">0</span></button>
-    <button type="button" class="tab" data-status="wanted" aria-pressed="false">Envies <span class="count" id="count-wanted">0</span></button>
+    <button type="button" class="tab" data-status="wanted" aria-pressed="false">Wishlist <span class="count" id="count-wanted">0</span></button>
   </nav>
 
   <main class="content">
     <label class="filter">
-      <span class="visually-hidden">Filtrer</span>
-      <input type="search" id="filter" placeholder="Filtrer par artiste, titre, label…" autocomplete="off">
+      <span class="visually-hidden">Filter</span>
+      <input type="search" id="filter" placeholder="Filter by artist, title, label…" autocomplete="off">
     </label>
     <div id="library" aria-live="polite"></div>
   </main>
 
   <footer class="footer">
-    <button type="button" class="btn btn--ghost" id="export">Exporter</button>
+    <button type="button" class="btn btn--ghost" id="export">Export</button>
     <label class="btn btn--ghost">
-      Importer
+      Import
       <input type="file" id="import" accept="application/json,.json" class="visually-hidden">
     </label>
-    <button type="button" class="btn btn--ghost" id="open-settings">Réglages</button>
+    <button type="button" class="btn btn--ghost" id="open-settings">Settings</button>
     <span class="version" id="version"></span>
   </footer>
 
   <dialog id="settings-dialog" aria-labelledby="settings-title">
     <div class="dialog__head">
-      <h2 id="settings-title">Réglages</h2>
-      <button type="button" class="btn btn--ghost btn--small" id="close-settings">Fermer</button>
+      <h2 id="settings-title">Settings</h2>
+      <button type="button" class="btn btn--ghost btn--small" id="close-settings">Close</button>
     </div>
 
     <form id="settings-form" class="settings">
       <h3>Discogs</h3>
       <p class="hint">
-        Discogs connaît bien mieux les vinyles que MusicBrainz. Il est interrogé quand MusicBrainz ne trouve rien,
-        à condition d'avoir un jeton personnel (gratuit) : crée-le sur
-        <a id="discogs-token-link" target="_blank" rel="noopener noreferrer">la page Développeurs de Discogs</a>
-        (bouton « Generate new token »), puis colle-le ici.
+        Discogs knows vinyl records far better than MusicBrainz. It is searched when MusicBrainz finds nothing,
+        provided you have a (free) personal access token: create one on
+        <a id="discogs-token-link" target="_blank" rel="noopener noreferrer">the Discogs Developers page</a>
+        (“Generate new token” button), then paste it here.
       </p>
       <p class="hint">
-        Le jeton reste dans ce navigateur : il n'est jamais exporté et n'est envoyé qu'à Discogs.
-        Il donne accès à ton compte Discogs ; en cas de doute, régénère-le sur la même page.
+        The token stays in this browser: it is never exported and is only sent to Discogs.
+        It grants access to your Discogs account; if in doubt, regenerate it on the same page.
       </p>
       <label class="field">
-        <span>Jeton personnel Discogs</span>
+        <span>Discogs personal access token</span>
         <input type="password" name="discogsToken" id="discogs-token" autocomplete="off" spellcheck="false">
       </label>
       <p class="hint" id="discogs-token-state"></p>
       <div class="settings__actions">
-        <button type="submit" class="btn">Enregistrer</button>
-        <button type="button" class="btn btn--ghost" id="clear-discogs-token">Effacer le jeton</button>
+        <button type="submit" class="btn">Save</button>
+        <button type="button" class="btn btn--ghost" id="clear-discogs-token">Delete token</button>
       </div>
     </form>
   </dialog>
 
   <dialog id="add-dialog" aria-labelledby="add-title">
     <div class="dialog__head">
-      <h2 id="add-title">Ajouter un disque</h2>
-      <button type="button" class="btn btn--ghost btn--small" id="close-add">Fermer</button>
+      <h2 id="add-title">Add a record</h2>
+      <button type="button" class="btn btn--ghost btn--small" id="close-add">Close</button>
     </div>
 
     <div class="add-modes">
-      <button type="button" class="btn" id="start-scan">Scanner</button>
+      <button type="button" class="btn" id="start-scan">Scan</button>
       <label class="btn btn--ghost">
-        Depuis une photo
+        From a photo
         <input type="file" id="photo" accept="image/*" capture="environment" class="visually-hidden">
       </label>
     </div>
@@ -84,15 +84,15 @@
     <div class="scanner" id="scanner" hidden>
       <video id="scan-video" playsinline muted></video>
       <div class="scanner__frame" aria-hidden="true"></div>
-      <button type="button" class="btn btn--small" id="stop-scan">Arrêter</button>
+      <button type="button" class="btn btn--small" id="stop-scan">Stop</button>
     </div>
 
     <form id="search-form" class="search">
-      <input type="text" name="barcode" inputmode="numeric" placeholder="Code-barres" autocomplete="off">
-      <input type="text" name="artist" placeholder="Artiste" autocomplete="off">
-      <input type="text" name="title" placeholder="Titre de l'album" autocomplete="off">
-      <input type="text" name="catno" placeholder="N° de catalogue (ex. PGLP21)" autocomplete="off">
-      <button type="submit" class="btn">Rechercher</button>
+      <input type="text" name="barcode" inputmode="numeric" placeholder="Barcode" autocomplete="off">
+      <input type="text" name="artist" placeholder="Artist" autocomplete="off">
+      <input type="text" name="title" placeholder="Album title" autocomplete="off">
+      <input type="text" name="catno" placeholder="Catalogue number (e.g. PGLP21)" autocomplete="off">
+      <button type="submit" class="btn">Search</button>
     </form>
 
     <p class="status" id="status" role="status"></p>

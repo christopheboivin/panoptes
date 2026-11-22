@@ -1,9 +1,9 @@
 /**
- * Accès minimal à IndexedDB (une base, un magasin d'objets).
+ * Minimal IndexedDB access (one database, one object store).
  *
- * Ce module est le seul à connaître IndexedDB. Pour passer un jour à un
- * stockage distant (synchronisation), il suffira de fournir un autre module
- * exposant les mêmes fonctions : getAll, put, putMany, remove.
+ * This is the only module that knows about IndexedDB. To switch to remote
+ * storage one day (sync), provide another module exposing the same
+ * functions: getAll, put, putMany, remove.
  */
 
 const DB_NAME = 'panoptes';
@@ -33,7 +33,7 @@ function openDb() {
   return dbPromise;
 }
 
-/** Exécute fn dans une transaction et attend sa fin complète. */
+/** Runs fn in a transaction and waits for it to complete. */
 async function withStore(mode, fn) {
   const db = await openDb();
   const tx = db.transaction(STORE, mode);
@@ -41,7 +41,7 @@ async function withStore(mode, fn) {
   await new Promise((resolve, reject) => {
     tx.oncomplete = resolve;
     tx.onerror = () => reject(tx.error);
-    tx.onabort = () => reject(tx.error ?? new Error('Transaction annulée.'));
+    tx.onabort = () => reject(tx.error ?? new Error('Transaction aborted.'));
   });
   return result;
 }

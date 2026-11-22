@@ -1,6 +1,6 @@
 /**
- * Point d'entrée : état de l'écran et liaison des événements.
- * La logique métier vit dans storage/, providers/, identify/ et scanner/.
+ * Entry point: screen state and event wiring.
+ * Business logic lives in storage/, providers/, identify/ and scanner/.
  */
 
 import { APP_VERSION, DISCOGS_TOKEN_PAGE } from './config.js';
@@ -19,7 +19,7 @@ import { renderLibrary, renderCandidates } from './ui/render.js';
 
 const library = createLibrary(db);
 const settings = createSettings();
-// Ordre d'interrogation : MusicBrainz d'abord, Discogs si MusicBrainz ne trouve rien.
+// Query order: MusicBrainz first, Discogs if MusicBrainz finds nothing.
 const catalog = createCatalog([
   musicbrainz,
   createDiscogsProvider({ getToken: settings.getDiscogsToken }),
@@ -50,7 +50,7 @@ const els = {
   tokenState: $('discogs-token-state'),
 };
 
-/* ---------- Affichage ---------- */
+/* ---------- Display ---------- */
 
 function matchesFilter(record, filter) {
   if (!filter) return true;
@@ -61,7 +61,7 @@ function matchesFilter(record, filter) {
 function render() {
   const visible = state.records
     .filter((r) => r.status === state.status && matchesFilter(r, state.filter))
-    .sort((a, b) => a.artist.localeCompare(b.artist, 'fr') || a.title.localeCompare(b.title, 'fr'));
+    .sort((a, b) => a.artist.localeCompare(b.artist) || a.title.localeCompare(b.title));
   els.library.innerHTML = renderLibrary(visible, state);
 
   for (const status of Object.values(STATUS)) {
@@ -98,7 +98,7 @@ function setStatus(message, tone = '') {
   els.status.dataset.tone = tone;
 }
 
-/** Remplace une pochette introuvable par l'URL de secours suivante. */
+/** Replaces a missing cover with the next fallback URL. */
 function handleCoverError(event) {
   const img = event.target;
   if (!(img instanceof HTMLImageElement) || !img.classList.contains('cover')) return;
@@ -111,12 +111,12 @@ function handleCoverError(event) {
   }
 }
 
-/* ---------- Recherche et identification ---------- */
+/* ---------- Search and identification ---------- */
 
 /**
- * Lance une recherche et affiche ses résultats.
- * search() renvoie { candidates, providerName?, skipped?, detail? } ; runSearch renvoie
- * ce résultat (ou null en cas d'erreur, déjà signalée à l'utilisateur).
+ * Runs a search and displays its results.
+ * search() returns { candidates, providerName?, skipped?, detail? }; runSearch returns
+ * that result (or null on error, which has already been shown to the user).
  */
 async function runSearch(label, search) {
   state.candidates = [];
@@ -129,8 +129,8 @@ async function runSearch(label, search) {
     state.candidatesSource = result.providerName ?? '';
     renderCandidateList();
     const count = result.candidates.length;
-    const where = result.providerName ? ` sur ${result.providerName}` : '';
-    const summary = count === 0 ? 'Aucun disque trouvé.' : `${count} résultat${count > 1 ? 's' : ''}${where}.`;
+    const where = result.providerName ? ` on ${result.providerName}` : '';
+    const summary = count === 0 ? 'No record found.' : `${count} result${count > 1 ? 's' : ''}${where}.`;
     setStatus([result.detail, summary, discogsHint(result)].filter(Boolean).join(' '));
     return result;
   } catch (error) {
@@ -139,16 +139,16 @@ async function runSearch(label, search) {
   }
 }
 
-/** Suggère de configurer Discogs quand il n'a pas pu être interrogé faute de jeton. */
+/** Suggests setting up Discogs when it could not be searched for lack of a token. */
 function discogsHint(result) {
   return result.candidates.length === 0 && result.skipped?.includes('Discogs')
-    ? 'Astuce : ajoute un jeton Discogs dans les Réglages pour chercher aussi sur Discogs, bien plus complet pour les vinyles.'
+    ? 'Tip: add a Discogs token in Settings to search Discogs as well; it is far more complete for vinyl.'
     : '';
 }
 
 /**
- * Étape de confirmation : le code lu est placé dans le champ « Code-barres »
- * et rien n'est envoyé à MusicBrainz tant que l'utilisateur ne valide pas.
+ * Confirmation step: the scanned code is put in the “Barcode” field and
+ * nothing is looked up until the user confirms.
  */
 function proposeBarcode(code) {
   const digits = normalizeBarcode(code);
@@ -156,23 +156,23 @@ function proposeBarcode(code) {
   renderCandidateList();
   els.searchForm.elements.barcode.value = digits;
   if (isValidBarcode(digits)) {
-    setStatus(`Code-barres lu : ${digits} (clé de contrôle correcte). Compare-le avec celui du disque, puis appuie sur « Rechercher ».`, 'ok');
+    setStatus(`Barcode read: ${digits} (check digit OK). Compare it with the one on the record, then press “Search”.`, 'ok');
   } else {
-    setStatus(`Code lu : ${digits || code}, mais sa clé de contrôle est incorrecte. Rescanne ou corrige-le avant de rechercher.`, 'warn');
+    setStatus(`Code read: ${digits || code}, but its check digit is wrong. Scan again or correct it before searching.`, 'warn');
   }
   els.searchForm.querySelector('button[type="submit"]').focus();
 }
 
 async function searchFromPhoto(file) {
-  setStatus('Lecture du code-barres sur la photo…');
+  setStatus('Reading the barcode on the photo…');
   try {
     const code = await readBarcodeFromImage(file);
     if (code) {
       proposeBarcode(code);
     } else if (hasImageIdentifiers()) {
-      await runSearch('Analyse de la photo', () => identifyImage(file));
+      await runSearch('Analysing the photo', () => identifyImage(file));
     } else {
-      setStatus('Aucun code-barres lisible sur la photo. Reprends-la plus nette, ou saisis le code à la main.', 'warn');
+      setStatus('No readable barcode on the photo. Take a sharper one, or type the code in.', 'warn');
     }
   } catch (error) {
     setStatus(error.message, 'warn');
@@ -180,15 +180,15 @@ async function searchFromPhoto(file) {
 }
 
 async function searchByBarcode(code) {
-  const result = await runSearch(`Recherche du code-barres ${code}`, async () => ({
+  const result = await runSearch(`Searching for barcode ${code}`, async () => ({
     ...(await catalog.searchByBarcode(code)),
-    detail: `Code-barres ${code}.`,
+    detail: `Barcode ${code}.`,
   }));
   if (result && result.candidates.length === 0) {
-    const where = result.skipped.includes('Discogs') ? 'pas sur MusicBrainz' : 'ni sur MusicBrainz ni sur Discogs';
+    const where = result.skipped.includes('Discogs') ? 'MusicBrainz' : 'MusicBrainz or Discogs';
     setStatus([
-      `Le code-barres ${code} n'est référencé ${where}.`,
-      'Cherche par artiste et titre, ou par numéro de catalogue : ce code sera enregistré avec le disque que tu choisiras.',
+      `Barcode ${code} is not listed on ${where}.`,
+      'Search by artist and title, or by catalogue number: this code will be saved with the record you pick.',
       discogsHint(result),
     ].filter(Boolean).join(' '), 'warn');
     els.searchForm.elements.artist.focus();
@@ -204,7 +204,7 @@ function stopScanning() {
 async function startScanning() {
   stopScanning();
   els.scanner.hidden = false;
-  setStatus('Vise le code-barres du disque.');
+  setStatus('Point the camera at the record\'s barcode.');
   try {
     state.stopScan = await startLiveScan(els.video, (code) => {
       state.stopScan = null;
@@ -226,16 +226,16 @@ function openAddDialog() {
   els.dialog.showModal();
 }
 
-/* ---------- Réglages ---------- */
+/* ---------- Settings ---------- */
 
 function renderTokenState() {
   els.tokenState.textContent = settings.getDiscogsToken()
-    ? 'Un jeton est enregistré sur cet appareil.'
-    : 'Aucun jeton enregistré : seul MusicBrainz est interrogé.';
+    ? 'A token is saved on this device.'
+    : 'No token saved: only MusicBrainz is searched.';
 }
 
 function openSettings() {
-  els.settingsForm.reset(); // le jeton enregistré n'est jamais réaffiché
+  els.settingsForm.reset(); // the saved token is never displayed again
   renderTokenState();
   els.settingsDialog.showModal();
 }
@@ -245,7 +245,7 @@ function saveDiscogsToken(token) {
     settings.setDiscogsToken(token);
     renderTokenState();
     els.settingsForm.reset();
-    toast(token.trim() ? 'Jeton Discogs enregistré.' : 'Jeton Discogs effacé.');
+    toast(token.trim() ? 'Discogs token saved.' : 'Discogs token deleted.');
   } catch (error) {
     toast(error.message);
   }
@@ -263,7 +263,7 @@ async function exportLibrary() {
   });
   link.click();
   URL.revokeObjectURL(url);
-  toast(`${data.records.length} disque(s) exporté(s).`);
+  toast(`${data.records.length} record(s) exported.`);
 }
 
 async function importLibrary(file) {
@@ -271,13 +271,13 @@ async function importLibrary(file) {
     const data = JSON.parse(await file.text());
     const { imported, rejected } = await library.importData(data);
     await reload();
-    toast(`${imported} disque(s) importé(s)${rejected ? `, ${rejected} ignoré(s) car invalides` : ''}.`);
+    toast(`${imported} record(s) imported${rejected ? `, ${rejected} skipped as invalid` : ''}.`);
   } catch (error) {
-    toast(error instanceof SyntaxError ? 'Fichier illisible : JSON invalide.' : error.message);
+    toast(error instanceof SyntaxError ? 'Unreadable file: invalid JSON.' : error.message);
   }
 }
 
-/* ---------- Événements ---------- */
+/* ---------- Events ---------- */
 
 function bindEvents() {
   document.querySelector('.tabs').addEventListener('click', (event) => {
@@ -299,9 +299,9 @@ function bindEvents() {
     if (!record) return;
     if (button.dataset.action === 'acquire') {
       await library.setStatus(record, STATUS.OWNED);
-      toast(`« ${record.title} » ajouté à ta collection.`);
+      toast(`“${record.title}” added to your collection.`);
     } else if (button.dataset.action === 'remove') {
-      if (!window.confirm(`Retirer « ${record.title} » ?`)) return;
+      if (!window.confirm(`Remove “${record.title}”?`)) return;
       await library.remove(record.id);
     }
     await reload();
@@ -332,7 +332,7 @@ function bindEvents() {
       catno: String(form.get('catno')),
     };
     if (Object.values(criteria).some((value) => value.trim())) {
-      runSearch('Recherche', () => catalog.searchByText(criteria));
+      runSearch('Searching', () => catalog.searchByText(criteria));
       return;
     }
     const barcode = normalizeBarcode(form.get('barcode'));
@@ -340,20 +340,20 @@ function bindEvents() {
       searchByBarcode(barcode);
       return;
     }
-    setStatus('Saisis un code-barres, un artiste, un titre ou un numéro de catalogue.');
+    setStatus('Enter a barcode, an artist, a title or a catalogue number.');
   });
 
   els.candidates.addEventListener('click', async (event) => {
     const button = event.target.closest('button[data-add]');
     if (!button) return;
     const candidate = state.candidates[Number(button.dataset.index)];
-    // Si la source ne connaît pas le code-barres de l'édition, on garde celui du disque en main.
+    // If the source does not know the edition's barcode, keep the one from the record in hand.
     const scanned = normalizeBarcode(els.searchForm.elements.barcode.value);
     const data = candidate.barcode || !scanned ? candidate : { ...candidate, barcode: scanned };
     const record = await library.add(data, button.dataset.add);
     await reload();
     renderCandidateList();
-    toast(`« ${record.title} » ajouté ${record.status === STATUS.OWNED ? 'à ta collection' : 'à tes envies'}.`);
+    toast(`“${record.title}” added to your ${record.status === STATUS.OWNED ? 'collection' : 'wishlist'}.`);
   });
 
   $('export').addEventListener('click', () => exportLibrary().catch((error) => toast(error.message)));
@@ -369,25 +369,25 @@ function bindEvents() {
     event.preventDefault();
     const token = String(new FormData(els.settingsForm).get('discogsToken'));
     if (!token.trim()) {
-      els.tokenState.textContent = 'Colle d\'abord ton jeton dans le champ.';
+      els.tokenState.textContent = 'Paste your token into the field first.';
       return;
     }
     saveDiscogsToken(token);
   });
   $('clear-discogs-token').addEventListener('click', () => {
-    if (window.confirm('Effacer le jeton Discogs de cet appareil ?')) saveDiscogsToken('');
+    if (window.confirm('Delete the Discogs token from this device?')) saveDiscogsToken('');
   });
 
-  // Les erreurs de chargement d'image ne remontent pas : écoute en phase de capture.
+  // Image load errors do not bubble: listen in the capture phase.
   document.addEventListener('error', handleCoverError, true);
 }
 
-/* ---------- Démarrage ---------- */
+/* ---------- Start-up ---------- */
 
 $('version').textContent = `v${APP_VERSION}`;
 $('discogs-token-link').href = DISCOGS_TOKEN_PAGE;
 bindEvents();
 reload().catch((error) => {
   els.library.innerHTML = '';
-  toast(`Stockage indisponible : ${error.message}`);
+  toast(`Storage unavailable: ${error.message}`);
 });

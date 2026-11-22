@@ -12,7 +12,7 @@ function memoryStorage() {
   };
 }
 
-test('enregistre, relit et efface le jeton Discogs', () => {
+test('saves, reads back and deletes the Discogs token', () => {
   const storage = memoryStorage();
   const settings = createSettings(storage);
   assert.equal(settings.getDiscogsToken(), '');
@@ -23,8 +23,8 @@ test('enregistre, relit et efface le jeton Discogs', () => {
   assert.equal(storage.data.size, 0);
 });
 
-test('sans stockage disponible, la lecture renvoie vide et l\'écriture lève une erreur', () => {
+test('without available storage, reading returns empty and writing throws', () => {
   const settings = createSettings(null);
   assert.equal(settings.getDiscogsToken(), '');
-  assert.throws(() => settings.setDiscogsToken('abc'), /désactivé/);
+  assert.throws(() => settings.setDiscogsToken('abc'), /disabled/);
 });

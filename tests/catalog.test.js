@@ -12,7 +12,7 @@ function fakeProvider(name, { configured = true, results = [], error = null } = 
   return { name, calls, isConfigured: () => configured, searchByBarcode: search, searchByText: search };
 }
 
-test('s\'arrête à la première source qui trouve un résultat', async () => {
+test('stops at the first source that finds a result', async () => {
   const first = fakeProvider('MusicBrainz', { results: [{ title: 'A' }] });
   const second = fakeProvider('Discogs', { results: [{ title: 'B' }] });
   const result = await createCatalog([first, second]).searchByBarcode('123');
@@ -21,7 +21,7 @@ test('s\'arrête à la première source qui trouve un résultat', async () => {
   assert.equal(second.calls.length, 0);
 });
 
-test('passe à la source suivante quand la première ne trouve rien', async () => {
+test('moves on to the next source when the first finds nothing', async () => {
   const first = fakeProvider('MusicBrainz');
   const second = fakeProvider('Discogs', { results: [{ title: 'B' }] });
   const result = await createCatalog([first, second]).searchByText({ catno: 'PGLP21' });
@@ -29,7 +29,7 @@ test('passe à la source suivante quand la première ne trouve rien', async () =
   assert.deepEqual(second.calls, [{ catno: 'PGLP21' }]);
 });
 
-test('signale les sources non configurées', async () => {
+test('reports sources that are not configured', async () => {
   const first = fakeProvider('MusicBrainz');
   const second = fakeProvider('Discogs', { configured: false });
   const result = await createCatalog([first, second]).searchByBarcode('123');
@@ -38,7 +38,7 @@ test('signale les sources non configurées', async () => {
   assert.equal(second.calls.length, 0);
 });
 
-test('une erreur n\'empêche pas la source suivante de répondre', async () => {
+test('an error does not stop the next source from answering', async () => {
   const first = fakeProvider('MusicBrainz', { error: new Error('503') });
   const second = fakeProvider('Discogs', { results: [{ title: 'B' }] });
   const result = await createCatalog([first, second]).searchByBarcode('123');
@@ -46,8 +46,8 @@ test('une erreur n\'empêche pas la source suivante de répondre', async () => {
   assert.equal(result.errors.length, 1);
 });
 
-test('lève la première erreur si aucune source ne trouve rien', async () => {
-  const first = fakeProvider('MusicBrainz', { error: new Error('MusicBrainz indisponible') });
+test('throws the first error if no source finds anything', async () => {
+  const first = fakeProvider('MusicBrainz', { error: new Error('MusicBrainz unavailable') });
   const second = fakeProvider('Discogs');
-  await assert.rejects(createCatalog([first, second]).searchByBarcode('123'), /MusicBrainz indisponible/);
+  await assert.rejects(createCatalog([first, second]).searchByBarcode('123'), /MusicBrainz unavailable/);
 });

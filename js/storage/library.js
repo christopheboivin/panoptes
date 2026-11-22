@@ -1,9 +1,9 @@
 /**
- * Bibliothèque de disques : règles métier au-dessus du stockage.
+ * Record library: business rules on top of storage.
  *
- * L'interface utilisateur ne parle qu'à ce module, jamais à db.js.
- * Le stockage est injecté (createLibrary(storage)) pour pouvoir être
- * remplacé ou simulé dans les tests.
+ * The user interface only talks to this module, never to db.js.
+ * Storage is injected (createLibrary(storage)) so that it can be
+ * replaced, or faked in tests.
  */
 
 import { createRecord, validateRecord, STATUS } from '../models/record.js';
@@ -11,7 +11,7 @@ import { createRecord, validateRecord, STATUS } from '../models/record.js';
 export const EXPORT_APP = 'panoptes';
 export const EXPORT_SCHEMA_VERSION = 1;
 
-/** Construit le contenu d'un fichier d'export (objet JSON sérialisable). */
+/** Builds the content of an export file (serialisable JSON object). */
 export function buildExport(records, now = new Date()) {
   return {
     app: EXPORT_APP,
@@ -22,15 +22,15 @@ export function buildExport(records, now = new Date()) {
 }
 
 /**
- * Lit le contenu d'un fichier d'export et renvoie les disques validés.
- * Les disques invalides sont écartés et comptés, sans bloquer l'import.
+ * Reads the content of an export file and returns the validated records.
+ * Invalid records are skipped and counted, without blocking the import.
  */
 export function parseExport(data) {
   if (!data || data.app !== EXPORT_APP || !Array.isArray(data.records)) {
-    throw new Error("Ce fichier n'est pas un export Panoptes.");
+    throw new Error('This file is not a Panoptes export.');
   }
   if (data.schemaVersion > EXPORT_SCHEMA_VERSION) {
-    throw new Error('Cet export provient d\'une version plus récente de Panoptes.');
+    throw new Error('This export comes from a newer version of Panoptes.');
   }
   const records = [];
   let rejected = 0;
@@ -66,7 +66,7 @@ export function createLibrary(storage) {
       return buildExport(await storage.getAll());
     },
 
-    /** Fusionne un export : les disques de même identifiant sont remplacés. */
+    /** Merges an export: records with the same identifier are replaced. */
     async importData(data) {
       const { records, rejected } = parseExport(data);
       await storage.putMany(records);

@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { toCandidate, formatMedia, buildTextQuery, barcodeVariants } from '../js/providers/musicbrainz.js';
 
-// Extrait représentatif d'une réponse de recherche MusicBrainz (/ws/2/release?fmt=json).
+// Representative excerpt of a MusicBrainz search response (/ws/2/release?fmt=json).
 const release = {
   id: 'rel-1',
   title: 'Abbey Road',
@@ -15,7 +15,7 @@ const release = {
   media: [{ format: '12" Vinyl' }],
 };
 
-test('toCandidate convertit une release MusicBrainz', () => {
+test('toCandidate converts a MusicBrainz release', () => {
   const candidate = toCandidate(release);
   assert.equal(candidate.title, 'Abbey Road');
   assert.equal(candidate.artist, 'The Beatles');
@@ -27,20 +27,20 @@ test('toCandidate convertit une release MusicBrainz', () => {
   assert.equal(candidate.coverUrls.length, 2);
 });
 
-test('toCandidate tolère une release incomplète', () => {
-  const candidate = toCandidate({ id: 'x', title: 'Inconnu' });
+test('toCandidate tolerates an incomplete release', () => {
+  const candidate = toCandidate({ id: 'x', title: 'Unknown' });
   assert.equal(candidate.artist, '');
   assert.equal(candidate.year, '');
   assert.equal(candidate.coverUrls.length, 1);
 });
 
-test('formatMedia regroupe les supports identiques', () => {
+test('formatMedia groups identical media', () => {
   assert.equal(formatMedia([{ format: 'CD' }, { format: 'CD' }]), '2×CD');
   assert.equal(formatMedia([{ format: '12" Vinyl' }, { format: 'CD' }]), '12" Vinyl + CD');
   assert.equal(formatMedia([]), '');
 });
 
-test('buildTextQuery combine artiste et titre et échappe les guillemets', () => {
+test('buildTextQuery combines artist and title and escapes quotes', () => {
   assert.equal(buildTextQuery({ artist: 'AC/DC', title: '' }), 'artist:"AC/DC"');
   assert.equal(
     buildTextQuery({ artist: 'Miles Davis', title: 'Kind of "Blue"' }),
@@ -50,7 +50,7 @@ test('buildTextQuery combine artiste et titre et échappe les guillemets', () =>
   assert.equal(buildTextQuery({ catno: ' PGLP21 ' }), 'catno:"PGLP21"');
 });
 
-test('barcodeVariants couvre les formes UPC-A et EAN-13', () => {
+test('barcodeVariants covers the UPC-A and EAN-13 forms', () => {
   assert.deepEqual(barcodeVariants('884108013632'), ['884108013632', '0884108013632']);
   assert.deepEqual(barcodeVariants('0884108013632'), ['0884108013632', '884108013632']);
   assert.deepEqual(barcodeVariants('5099902987026'), ['5099902987026']);

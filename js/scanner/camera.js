@@ -1,6 +1,6 @@
 /**
- * Scan en temps réel : caméra arrière ouverte, analyse régulière des images
- * jusqu'à la détection d'un code-barres.
+ * Real-time scanning: opens the rear camera and analyses frames regularly
+ * until a barcode is detected.
  */
 
 import { SCAN_INTERVAL_MS } from '../config.js';
@@ -8,24 +8,24 @@ import { detectBarcode, getDetector } from './barcode-engine.js';
 
 function cameraErrorMessage(error) {
   switch (error?.name) {
-    case 'NotAllowedError': return "Accès à la caméra refusé. Autorise-le dans les réglages du navigateur.";
-    case 'NotFoundError': return 'Aucune caméra détectée sur cet appareil.';
-    case 'NotReadableError': return 'La caméra est déjà utilisée par une autre application.';
-    default: return `Caméra indisponible : ${error?.message ?? error}`;
+    case 'NotAllowedError': return 'Camera access denied. Allow it in the browser settings.';
+    case 'NotFoundError': return 'No camera found on this device.';
+    case 'NotReadableError': return 'The camera is already in use by another application.';
+    default: return `Camera unavailable: ${error?.message ?? error}`;
   }
 }
 
 /**
- * Démarre le scan dans l'élément <video> fourni.
+ * Starts scanning in the given <video> element.
  * @param {HTMLVideoElement} video
- * @param {(code: string) => void} onCode - appelé une fois, au premier code lu
- * @returns {Promise<() => void>} fonction d'arrêt (à appeler dans tous les cas)
+ * @param {(code: string) => void} onCode - called once, with the first code read
+ * @returns {Promise<() => void>} stop function (to be called in every case)
  */
 export async function startLiveScan(video, onCode) {
   if (!navigator.mediaDevices?.getUserMedia) {
-    throw new Error('Ce navigateur ne permet pas d\'utiliser la caméra (une adresse HTTPS est nécessaire).');
+    throw new Error('This browser cannot use the camera (an HTTPS address is required).');
   }
-  await getDetector(); // échoue tôt si aucun lecteur n'est disponible
+  await getDetector(); // fails early if no reader is available
 
   let stream;
   try {
@@ -59,7 +59,7 @@ export async function startLiveScan(video, onCode) {
         }
       }
     } catch {
-      // Une image illisible n'est pas une erreur : on passe à la suivante.
+      // An unreadable frame is not an error: move on to the next one.
     }
     timer = setTimeout(tick, SCAN_INTERVAL_MS);
   };

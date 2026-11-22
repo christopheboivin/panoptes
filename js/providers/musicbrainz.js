@@ -1,11 +1,11 @@
 /**
- * Source de données MusicBrainz (+ pochettes Cover Art Archive).
+ * MusicBrainz data source (+ covers from Cover Art Archive).
  *
- * Contrat d'une source de données (à respecter pour en ajouter une, ex. Discogs) :
+ * Data source contract (to follow when adding another one, e.g. Discogs):
  *   searchByBarcode(code)            -> Promise<Candidate[]>
  *   searchByText({ artist, title, catno }) -> Promise<Candidate[]>
  *
- * Un Candidate a la forme attendue par createRecord() :
+ * A Candidate has the shape expected by createRecord():
  *   { title, artist, year, format, label, catno, barcode, country,
  *     source: { provider, id }, coverUrls: string[] }
  */
@@ -14,13 +14,13 @@ import { MUSICBRAINZ_API, COVER_ART_API, MUSICBRAINZ_MIN_DELAY_MS, SEARCH_LIMIT 
 
 export const PROVIDER_ID = 'musicbrainz';
 
-/* ---------- Normalisation (fonctions pures, testées) ---------- */
+/* ---------- Normalisation (pure, tested functions) ---------- */
 
-/** "12\" Vinyl" ×2 -> '2×12" Vinyl' ; plusieurs formats joints par " + ". */
+/** "12\" Vinyl" ×2 -> '2×12" Vinyl'; several formats joined with " + ". */
 export function formatMedia(media = []) {
   const counts = new Map();
   for (const medium of media) {
-    const name = medium?.format || 'Inconnu';
+    const name = medium?.format || 'Unknown';
     counts.set(name, (counts.get(name) ?? 0) + 1);
   }
   return [...counts].map(([name, n]) => (n > 1 ? `${n}×${name}` : name)).join(' + ');
@@ -30,7 +30,7 @@ export function formatArtist(credits = []) {
   return credits.map((c) => `${c.name ?? c.artist?.name ?? ''}${c.joinphrase ?? ''}`).join('').trim();
 }
 
-/** Convertit une « release » MusicBrainz en Candidate. */
+/** Converts a MusicBrainz release into a Candidate. */
 export function toCandidate(release) {
   const labelInfo = release['label-info']?.[0];
   const releaseGroupId = release['release-group']?.id;
@@ -51,7 +51,7 @@ export function toCandidate(release) {
   };
 }
 
-/** Échappe une valeur pour la syntaxe de recherche Lucene de MusicBrainz. */
+/** Escapes a value for MusicBrainz's Lucene search syntax. */
 export function luceneQuote(value) {
   return `"${String(value).replace(/[\\"]/g, '\\$&')}"`;
 }
@@ -64,13 +64,13 @@ export function buildTextQuery({ artist = '', title = '', catno = '' }) {
   return parts.join(' AND ');
 }
 
-/* ---------- Accès réseau ---------- */
+/* ---------- Network access ---------- */
 
 const RETRY_DELAYS_MS = [1500, 3000, 6000];
 
 let lastRequestAt = 0;
 
-/** Respecte la limite d'une requête par seconde imposée par MusicBrainz. */
+/** Honours MusicBrainz's limit of one request per second. */
 async function throttle() {
   const wait = lastRequestAt + MUSICBRAINZ_MIN_DELAY_MS - Date.now();
   if (wait > 0) await new Promise((resolve) => setTimeout(resolve, wait));
@@ -78,9 +78,9 @@ async function throttle() {
 }
 
 /**
- * MusicBrainz répond 503 quand une limite de débit est atteinte (la nôtre
- * ou la charge globale de ses serveurs). Ces refus sont passagers : on
- * réessaie quelques fois en espaçant les tentatives avant d'abandonner.
+ * MusicBrainz answers 503 when a rate limit is reached (ours, or the
+ * overall load on its servers). These refusals are temporary: retry a few
+ * times, spacing out the attempts, before giving up.
  */
 async function fetchWithRetry(url) {
   for (let attempt = 0; ; attempt += 1) {
@@ -95,18 +95,18 @@ async function searchReleases(query) {
   const url = `${MUSICBRAINZ_API}/release/?query=${encodeURIComponent(query)}&limit=${SEARCH_LIMIT}&fmt=json`;
   const response = await fetchWithRetry(url);
   if (response.status === 503) {
-    throw new Error('MusicBrainz refuse temporairement les requêtes (limite de débit). Réessaie dans une minute.');
+    throw new Error('MusicBrainz is temporarily refusing requests (rate limit). Try again in a minute.');
   }
   if (!response.ok) {
-    throw new Error(`Erreur MusicBrainz (${response.status}).`);
+    throw new Error(`MusicBrainz error (${response.status}).`);
   }
   const data = await response.json();
   return (data.releases ?? []).map(toCandidate);
 }
 
 /**
- * Un même code s'écrit en UPC-A (12 chiffres) ou en EAN-13 (le même précédé
- * d'un 0) ; MusicBrainz peut avoir enregistré l'une ou l'autre forme.
+ * The same code can be written as UPC-A (12 digits) or EAN-13 (the same
+ * preceded by a 0); MusicBrainz may have recorded either form.
  */
 export function barcodeVariants(code) {
   const digits = String(code).replace(/\D/g, '');
@@ -126,7 +126,7 @@ export function searchByText(criteria) {
   return query ? searchReleases(query) : Promise.resolve([]);
 }
 
-/** Source prête à être passée à createCatalog() (MusicBrainz ne demande aucun réglage). */
+/** Source ready to be passed to createCatalog() (MusicBrainz needs no settings). */
 export const provider = Object.freeze({
   id: PROVIDER_ID,
   name: 'MusicBrainz',

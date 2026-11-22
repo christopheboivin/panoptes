@@ -1,27 +1,27 @@
 /**
- * Source de données Discogs (bien plus complète que MusicBrainz pour les vinyles).
+ * Discogs data source (far more complete than MusicBrainz for vinyl).
  *
- * Respecte le même contrat que providers/musicbrainz.js :
+ * Follows the same contract as providers/musicbrainz.js:
  *   searchByBarcode(code)                   -> Promise<Candidate[]>
  *   searchByText({ artist, title, catno })  -> Promise<Candidate[]>
  *
- * La recherche Discogs exige un jeton personnel. Il est fourni par
- * getToken() (voir storage/settings.js) et transmis en paramètre d'URL :
- * aucun en-tête personnalisé, donc pas de requête CORS préalable.
+ * Discogs search requires a personal token. It is provided by getToken()
+ * (see storage/settings.js) and sent as a URL parameter: no custom header,
+ * hence no CORS preflight request.
  */
 
 import { DISCOGS_API, DISCOGS_MIN_DELAY_MS, SEARCH_LIMIT } from '../config.js';
 
 export const PROVIDER_ID = 'discogs';
 
-/* ---------- Normalisation (fonctions pures, testées) ---------- */
+/* ---------- Normalisation (pure, tested functions) ---------- */
 
-/** Discogs distingue les homonymes par un suffixe : « Genesis (2) » -> « Genesis ». */
+/** Discogs tells namesakes apart with a suffix: “Genesis (2)” -> “Genesis”. */
 export function cleanArtistName(name = '') {
   return String(name).replace(/\s*\(\d+\)$/, '').trim();
 }
 
-/** Le titre d'un résultat de recherche s'écrit « Artiste - Titre ». */
+/** A search result's title is written “Artist - Title”. */
 export function splitTitle(fullTitle = '') {
   const text = String(fullTitle);
   const separator = text.indexOf(' - ');
@@ -32,15 +32,15 @@ export function splitTitle(fullTitle = '') {
   };
 }
 
-/** ["Vinyl", "LP", "Album"] avec quantité 2 -> '2×Vinyl, LP, Album'. */
+/** ["Vinyl", "LP", "Album"] with quantity 2 -> '2×Vinyl, LP, Album'. */
 export function formatDescriptions(formats = [], quantity = 1) {
   const text = [...new Set(formats)].join(', ');
   return text && Number(quantity) > 1 ? `${quantity}×${text}` : text;
 }
 
 /**
- * Le champ « barcode » de Discogs mélange code-barres et autres inscriptions
- * (matrices, codes SPARS…) : on garde le premier vrai code EAN/UPC.
+ * Discogs's “barcode” field mixes barcodes with other markings (matrix
+ * numbers, SPARS codes…): keep the first real EAN/UPC code.
  */
 export function pickBarcode(values = []) {
   for (const value of values) {
@@ -50,12 +50,12 @@ export function pickBarcode(values = []) {
   return '';
 }
 
-/** Discogs renvoie une image « spacer.gif » quand il n'a pas de pochette. */
+/** Discogs returns a “spacer.gif” image when it has no cover. */
 function isRealImage(url) {
   return typeof url === 'string' && url.startsWith('https://') && !url.endsWith('spacer.gif');
 }
 
-/** Convertit un résultat de recherche Discogs (type « release ») en Candidate. */
+/** Converts a Discogs search result (type “release”) into a Candidate. */
 export function toCandidate(result) {
   const { artist, title } = splitTitle(result.title);
   return {
@@ -72,7 +72,7 @@ export function toCandidate(result) {
   };
 }
 
-/** Paramètres de recherche Discogs ; les critères vides sont ignorés. */
+/** Discogs search parameters; empty criteria are ignored. */
 export function buildSearchParams({ barcode = '', artist = '', title = '', catno = '' }, token) {
   const params = new URLSearchParams({ type: 'release', per_page: String(SEARCH_LIMIT) });
   const criteria = { barcode, artist, release_title: title, catno };
@@ -83,14 +83,14 @@ export function buildSearchParams({ barcode = '', artist = '', title = '', catno
   return params;
 }
 
-/* ---------- Accès réseau ---------- */
+/* ---------- Network access ---------- */
 
 const RETRY_DELAYS_MS = [2000, 5000];
 
 /**
  * @param {object} options
- * @param {() => string} options.getToken - renvoie le jeton personnel (chaîne vide si absent)
- * @param {typeof fetch} [options.fetchFn] - remplaçable dans les tests
+ * @param {() => string} options.getToken - returns the personal token (empty string if none)
+ * @param {typeof fetch} [options.fetchFn] - replaceable in tests
  */
 export function createDiscogsProvider({ getToken, fetchFn = (...args) => fetch(...args) }) {
   let lastRequestAt = 0;
@@ -101,7 +101,7 @@ export function createDiscogsProvider({ getToken, fetchFn = (...args) => fetch(.
     lastRequestAt = Date.now();
   }
 
-  /** Discogs répond 429 quand la limite de débit est atteinte : on réessaie un peu plus tard. */
+  /** Discogs answers 429 when the rate limit is reached: retry a little later. */
   async function fetchWithRetry(url) {
     for (let attempt = 0; ; attempt += 1) {
       await throttle();
@@ -117,13 +117,13 @@ export function createDiscogsProvider({ getToken, fetchFn = (...args) => fetch(.
     const url = `${DISCOGS_API}/database/search?${buildSearchParams(criteria, token)}`;
     const response = await fetchWithRetry(url);
     if (response.status === 401) {
-      throw new Error('Discogs refuse le jeton enregistré. Vérifie-le dans les Réglages.');
+      throw new Error('Discogs rejects the saved token. Check it in Settings.');
     }
     if (response.status === 429) {
-      throw new Error('Discogs limite temporairement les requêtes. Réessaie dans une minute.');
+      throw new Error('Discogs is temporarily limiting requests. Try again in a minute.');
     }
     if (!response.ok) {
-      throw new Error(`Erreur Discogs (${response.status}).`);
+      throw new Error(`Discogs error (${response.status}).`);
     }
     const data = await response.json();
     return (data.results ?? []).map(toCandidate);
