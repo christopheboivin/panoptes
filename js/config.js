@@ -1,6 +1,6 @@
 /** Centralised application settings. */
 
-export const APP_VERSION = '0.3.0';
+export const APP_VERSION = '0.4.0';
 
 /**
  * Fallback barcode reading engine, loaded only when the browser has no
@@ -26,7 +26,17 @@ export const COVER_ART_API = 'https://coverartarchive.org';
 /** MusicBrainz allows one request per second. */
 export const MUSICBRAINZ_MIN_DELAY_MS = 1100;
 
-export const SEARCH_LIMIT = 15;
+/**
+ * Results per search. Results are grouped by album, and an album often has
+ * many editions: ask for enough of them to show several albums.
+ */
+export const SEARCH_LIMIT = 50;
+
+/** Editions of an album: requested by pages of this size (the maximum for both sources)… */
+export const EDITIONS_PAGE_SIZE = 100;
+
+/** …and at most this many pages (some albums have over a thousand editions). */
+export const MAX_EDITION_PAGES = 10;
 
 export const DISCOGS_API = 'https://api.discogs.com';
 

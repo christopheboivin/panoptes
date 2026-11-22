@@ -1,9 +1,13 @@
 /**
  * MusicBrainz data source (+ covers from Cover Art Archive).
  *
- * Data source contract (to follow when adding another one, e.g. Discogs):
- *   searchByBarcode(code)            -> Promise<Candidate[]>
- *   searchByText({ artist, title, catno }) -> Promise<Candidate[]>
+ * Data source contract (to follow when adding another one, see discogs.js):
+ *   { id, name, isConfigured(),
+ *     searchByBarcode(code)                  -> Promise<Candidate[]>
+ *     searchByText({ artist, title, catno }) -> Promise<Candidate[]>
+ *     listEditions(album)                    -> AsyncGenerator<Candidate[]> (optional)
+ *   }
+ * listEditions yields the editions of album.source.groupId page by page.
  *
  * A Candidate has the shape expected by createRecord():
  *   { title, artist, year, format, label, catno, barcode, country,
@@ -11,7 +15,9 @@
  * (id identifies the edition, groupId the album; groupId may be empty.)
  */
 
-import { MUSICBRAINZ_API, COVER_ART_API, MUSICBRAINZ_MIN_DELAY_MS, SEARCH_LIMIT } from '../config.js';
+import {
+  MUSICBRAINZ_API, COVER_ART_API, MUSICBRAINZ_MIN_DELAY_MS, SEARCH_LIMIT, EDITIONS_PAGE_SIZE, MAX_EDITION_PAGES,
+} from '../config.js';
 import { createThrottle } from './throttle.js';
 
 export const PROVIDER_ID = 'musicbrainz';
@@ -70,35 +76,7 @@ export function buildTextQuery({ artist = '', title = '', catno = '' }) {
 
 const RETRY_DELAYS_MS = [1500, 3000, 6000];
 
-/** Honours MusicBrainz's limit of one request per second. */
-const throttle = createThrottle(MUSICBRAINZ_MIN_DELAY_MS);
-
-/**
- * MusicBrainz answers 503 when a rate limit is reached (ours, or the
- * overall load on its servers). These refusals are temporary: retry a few
- * times, spacing out the attempts, before giving up.
- */
-async function fetchWithRetry(url) {
-  for (let attempt = 0; ; attempt += 1) {
-    await throttle();
-    const response = await fetch(url);
-    if (response.status !== 503 || attempt >= RETRY_DELAYS_MS.length) return response;
-    await new Promise((resolve) => setTimeout(resolve, RETRY_DELAYS_MS[attempt]));
-  }
-}
-
-async function searchReleases(query) {
-  const url = `${MUSICBRAINZ_API}/release/?query=${encodeURIComponent(query)}&limit=${SEARCH_LIMIT}&fmt=json`;
-  const response = await fetchWithRetry(url);
-  if (response.status === 503) {
-    throw new Error('MusicBrainz is temporarily refusing requests (rate limit). Try again in a minute.');
-  }
-  if (!response.ok) {
-    throw new Error(`MusicBrainz error (${response.status}).`);
-  }
-  const data = await response.json();
-  return (data.releases ?? []).map(toCandidate);
-}
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 /**
  * The same code can be written as UPC-A (12 digits) or EAN-13 (the same
@@ -111,22 +89,79 @@ export function barcodeVariants(code) {
   return digits ? [digits] : [];
 }
 
-export function searchByBarcode(code) {
-  const variants = barcodeVariants(code);
-  if (variants.length === 0) return Promise.resolve([]);
-  return searchReleases(`barcode:(${variants.join(' OR ')})`);
-}
+/**
+ * Creates the MusicBrainz source, ready to be passed to createCatalog()
+ * (MusicBrainz needs no settings). Create it once: the instance enforces
+ * the limit of one request per second.
+ * @param {object} [options]
+ * @param {typeof fetch} [options.fetchFn] - replaceable in tests
+ * @param {(ms: number) => Promise<void>} [options.sleepFn] - replaceable in tests
+ */
+export function createMusicBrainzProvider({ fetchFn = (...args) => fetch(...args), sleepFn = sleep } = {}) {
+  const throttle = createThrottle(MUSICBRAINZ_MIN_DELAY_MS, { sleep: sleepFn });
 
-export function searchByText(criteria) {
-  const query = buildTextQuery(criteria);
-  return query ? searchReleases(query) : Promise.resolve([]);
-}
+  /**
+   * MusicBrainz answers 503 when a rate limit is reached (ours, or the
+   * overall load on its servers). These refusals are temporary: retry a few
+   * times, spacing out the attempts, before giving up.
+   */
+  async function getJson(url) {
+    let response;
+    for (let attempt = 0; ; attempt += 1) {
+      await throttle();
+      response = await fetchFn(url);
+      if (response.status !== 503 || attempt >= RETRY_DELAYS_MS.length) break;
+      await sleepFn(RETRY_DELAYS_MS[attempt]);
+    }
+    if (response.status === 503) {
+      throw new Error('MusicBrainz is temporarily refusing requests (rate limit). Try again in a minute.');
+    }
+    if (!response.ok) {
+      throw new Error(`MusicBrainz error (${response.status}).`);
+    }
+    return response.json();
+  }
 
-/** Source ready to be passed to createCatalog() (MusicBrainz needs no settings). */
-export const provider = Object.freeze({
-  id: PROVIDER_ID,
-  name: 'MusicBrainz',
-  isConfigured: () => true,
-  searchByBarcode,
-  searchByText,
-});
+  async function searchReleases(query) {
+    const url = `${MUSICBRAINZ_API}/release/?query=${encodeURIComponent(query)}&limit=${SEARCH_LIMIT}&fmt=json`;
+    const data = await getJson(url);
+    return (data.releases ?? []).map(toCandidate);
+  }
+
+  /**
+   * All the editions (releases) of an album (release group), one page of
+   * candidates at a time, as they arrive.
+   * @param {object} album - a candidate or record with source.groupId
+   * @returns {AsyncGenerator<Candidate[]>}
+   */
+  async function* listEditions(album) {
+    const groupId = album.source?.groupId;
+    if (!groupId) return;
+    let offset = 0;
+    for (let page = 0; page < MAX_EDITION_PAGES; page += 1) {
+      const url = `${MUSICBRAINZ_API}/release?release-group=${encodeURIComponent(groupId)}`
+        + `&inc=artist-credits+labels+media&limit=${EDITIONS_PAGE_SIZE}&offset=${offset}&fmt=json`;
+      const data = await getJson(url);
+      const releases = data.releases ?? [];
+      // Browsed releases do not repeat their release group: it is the album's.
+      yield releases.map((release) => toCandidate({ ...release, 'release-group': { id: groupId } }));
+      offset += releases.length;
+      if (releases.length === 0 || offset >= (data['release-count'] ?? 0)) return;
+    }
+  }
+
+  return {
+    id: PROVIDER_ID,
+    name: 'MusicBrainz',
+    isConfigured: () => true,
+    searchByBarcode(code) {
+      const variants = barcodeVariants(code);
+      return variants.length ? searchReleases(`barcode:(${variants.join(' OR ')})`) : Promise.resolve([]);
+    },
+    searchByText(criteria) {
+      const query = buildTextQuery(criteria);
+      return query ? searchReleases(query) : Promise.resolve([]);
+    },
+    listEditions,
+  };
+}

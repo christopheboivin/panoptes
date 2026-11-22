@@ -1,0 +1,246 @@
+{
+  "release-count": 138,
+  "release-offset": 0,
+  "releases": [
+    {
+      "packaging": null,
+      "asin": null,
+      "id": "16489a93-888a-454d-a13a-c8bec167bb5e",
+      "release-events": [
+        {
+          "date": "1984",
+          "area": {
+            "type": null,
+            "iso-3166-1-codes": [
+              "CA"
+            ],
+            "type-id": null,
+            "sort-name": "Canada",
+            "id": "71bbafaa-e825-3e15-8ca9-017dcad1748b",
+            "disambiguation": "",
+            "name": "Canada"
+          }
+        }
+      ],
+      "date": "1984",
+      "artist-credit": [
+        {
+          "joinphrase": "",
+          "name": "Miles Davis",
+          "artist": {
+            "type": "Person",
+            "country": "US",
+            "disambiguation": "jazz trumpeter, bandleader, songwriter",
+            "sort-name": "Davis, Miles",
+            "id": "561d854a-6a28-4aa7-8c99-323e6ce46c2a",
+            "type-id": "b6e035f4-3ce9-331c-97df-83397230b0df",
+            "name": "Miles Davis"
+          }
+        }
+      ],
+      "title": "Kind of Blue",
+      "status": "Official",
+      "barcode": "061213081637",
+      "packaging-id": null,
+      "text-representation": {
+        "language": "eng",
+        "script": "Latn"
+      },
+      "media": [
+        {
+          "format-id": "9712d52a-4509-3d4b-a1a2-67c88c643e31",
+          "id": "27636720-3a89-38ad-bc7f-a17991b165d9",
+          "position": 1,
+          "track-count": 5,
+          "title": "",
+          "format": "CD"
+        }
+      ],
+      "quality": "normal",
+      "country": "CA",
+      "disambiguation": "stereo Reissue",
+      "label-info": [
+        {
+          "label": {
+            "sort-name": "CBS",
+            "disambiguation": "CBS Records’ international imprint from 1962–1990; renamed since 1991 as Columbia",
+            "id": "b8d33bec-92cc-40d9-bd92-4eb089b401a9",
+            "type-id": "b6285b2a-3514-3d43-80df-fcf528824ded",
+            "name": "CBS",
+            "type": "Imprint",
+            "label-code": 149
+          },
+          "catalog-number": "CK-8163"
+        }
+      ],
+      "cover-art-archive": {
+        "front": true,
+        "artwork": true,
+        "back": false,
+        "count": 2,
+        "darkened": false
+      },
+      "status-id": "4e304316-386d-3409-af2e-78857eec5cfe"
+    },
+    {
+      "media": [
+        {
+          "format": "12\" Vinyl",
+          "title": "",
+          "position": 1,
+          "track-count": 5,
+          "id": "bdc4f08a-e8af-308d-8cc5-87a6bf1b71de",
+          "format-id": "3e9080b0-5e6c-34ab-bd15-f526b6306a64"
+        }
+      ],
+      "quality": "normal",
+      "disambiguation": "reissue, remastered, stereo, 200 gram Quiex SV-P, “Hand Made”",
+      "country": "US",
+      "text-representation": {
+        "script": "Latn",
+        "language": "eng"
+      },
+      "cover-art-archive": {
+        "count": 1,
+        "darkened": false,
+        "back": false,
+        "artwork": true,
+        "front": true
+      },
+      "status-id": "4e304316-386d-3409-af2e-78857eec5cfe",
+      "label-info": [
+        {
+          "catalog-number": "CS 8163",
+          "label": {
+            "type": "Reissue Production",
+            "label-code": null,
+            "disambiguation": "audiophile reissues",
+            "sort-name": "Classic Records",
+            "id": "f8714b81-78da-4f6e-a20c-7b2bad7709ce",
+            "type-id": "88ee6ae7-f413-3490-a1d2-54f6a9f0838c",
+            "name": "Classic Records"
+          }
+        }
+      ],
+      "id": "14f34297-ae81-4069-925a-1a320ac19f11",
+      "date": "2008",
+      "release-events": [
+        {
+          "date": "2008",
+          "area": {
+            "type-id": null,
+            "sort-name": "United States",
+            "id": "489ce91b-6658-3307-9877-795b68554c98",
+            "disambiguation": "",
+            "name": "United States",
+            "type": null,
+            "iso-3166-1-codes": [
+              "US"
+            ]
+          }
+        }
+      ],
+      "packaging": "Cardboard/Paper Sleeve",
+      "asin": null,
+      "barcode": "",
+      "packaging-id": "f7101ce3-0384-39ce-9fde-fbbd0044d35f",
+      "status": "Official",
+      "artist-credit": [
+        {
+          "name": "Miles Davis",
+          "joinphrase": "",
+          "artist": {
+            "type": "Person",
+            "country": "US",
+            "sort-name": "Davis, Miles",
+            "disambiguation": "jazz trumpeter, bandleader, songwriter",
+            "id": "561d854a-6a28-4aa7-8c99-323e6ce46c2a",
+            "type-id": "b6e035f4-3ce9-331c-97df-83397230b0df",
+            "name": "Miles Davis"
+          }
+        }
+      ],
+      "title": "Kind of Blue"
+    },
+    {
+      "packaging-id": null,
+      "barcode": null,
+      "status": "Bootleg",
+      "artist-credit": [
+        {
+          "artist": {
+            "name": "Miles Davis",
+            "type-id": "b6e035f4-3ce9-331c-97df-83397230b0df",
+            "id": "561d854a-6a28-4aa7-8c99-323e6ce46c2a",
+            "sort-name": "Davis, Miles",
+            "country": "US",
+            "disambiguation": "jazz trumpeter, bandleader, songwriter",
+            "type": "Person"
+          },
+          "joinphrase": "",
+          "name": "Miles Davis"
+        }
+      ],
+      "title": "Another Tracks of \"Kind of Blue\"",
+      "date": "2003",
+      "release-events": [
+        {
+          "date": "2003",
+          "area": {
+            "sort-name": "Japan",
+            "disambiguation": "",
+            "id": "2db42837-c832-3c27-b4a3-08198f75693c",
+            "type-id": null,
+            "name": "Japan",
+            "type": null,
+            "iso-3166-1-codes": [
+              "JP"
+            ]
+          }
+        }
+      ],
+      "id": "d647accb-ec48-4e69-b83e-a090ef034e64",
+      "asin": null,
+      "packaging": null,
+      "status-id": "1156806e-d06a-38bd-83f0-cf2284a808b9",
+      "cover-art-archive": {
+        "darkened": false,
+        "count": 3,
+        "artwork": true,
+        "back": true,
+        "front": true
+      },
+      "label-info": [
+        {
+          "label": {
+            "sort-name": "Core Collections",
+            "disambiguation": "",
+            "id": "e80b9d96-0f93-4d30-96db-ec82995185f6",
+            "type-id": null,
+            "name": "Core Collections",
+            "type": null,
+            "label-code": null
+          },
+          "catalog-number": "CC-2003001"
+        }
+      ],
+      "quality": "normal",
+      "disambiguation": "",
+      "country": "JP",
+      "media": [
+        {
+          "position": 1,
+          "track-count": 2,
+          "title": "",
+          "format": null,
+          "format-id": null,
+          "id": "ef2e721d-acc4-3676-8af7-0c17385241d4"
+        }
+      ],
+      "text-representation": {
+        "language": "eng",
+        "script": "Latn"
+      }
+    }
+  ]
+}

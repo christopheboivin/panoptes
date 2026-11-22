@@ -32,7 +32,7 @@ A personal web application to catalogue a collection of vinyl records and CDs: s
   - `schemaVersion` stays 1 (`groupId` is optional; no older app version is in use).
   - Later: per-copy details (condition, purchase date, price, notes), “group by album” view.
 
-## Current state (v0.3.0)
+## Current state (v0.4.0)
 
 - **Live at <https://christopheboivin.github.io/panoptes/>**, repository <https://github.com/christopheboivin/panoptes>
   (public, MIT licence, first commit `522cde0`).
@@ -47,14 +47,19 @@ A personal web application to catalogue a collection of vinyl records and CDs: s
 - **Discogs tested and validated in Firefox** by the user (22 November 2026): barcode and catalogue number.
 - barcode-detector 2.2.5 and its zxing_reader.wasm file (zxing-wasm 1.2.7) are **hosted in `vendor/`**:
   no more requests to jsDelivr. Loading of the .wasm file checked under Node.
-- 50 unit tests (`npm test` with Node.js, or `deno test --allow-all tests/`: Deno is installed on the PC, Node is not).
+- 64 unit tests (`npm test` with Node.js, or `deno test --allow-all tests/`: Deno is installed on the PC, Node is not).
 - Whole project translated into English (interface, messages, comments, tests, documentation) on 22 November 2026;
   the IndexedDB data, the export format and the Discogs token storage are unchanged.
 - **v0.3.0** (22 November 2026): camera always released (dialog closed during start-up, video error),
   error messages on add / “Got it” / remove, stale search results ignored, shared request throttle
   (`providers/throttle.js`). See `CHANGELOG.md`.
-- **Unreleased, phase A** (22 November 2026): copies / editions / albums (see Decisions), `models/match.js`,
-  Wishlist stored as albums, “Got it” searches the album's editions. Checked in the preview against MusicBrainz.
+- **v0.4.0** (22 November 2026):
+  - Phase A: copies / editions / albums (see Decisions), `models/match.js`, Wishlist stored as albums.
+  - Phase B: **edition picker** for a phone screen (`models/editions.js`, `listEditions()` in both sources,
+    sticky filters Format / Country / text); text search grouped by album (“I own it…”); “Got it” and
+    barcode “Other editions…” open the picker. Checked in the preview at 375 px against the real MusicBrainz.
+  - Not checked in a browser: the Discogs picker (no token in the preview; covered by unit tests on recorded
+    responses). Discogs versions carry no barcode.
 - **Not yet tested**: camera scanning and “from a photo” with the hosted library, in Firefox on desktop and on Android.
 
 ## Discogs token (decided 22 November 2026)
@@ -74,13 +79,7 @@ Discogs finds them.
 
 ## Next steps, in order
 
-1. **User validates phase A**, then **phase B: edition picker**. Search results grouped by album
-   (“Kind of Blue — 4 editions found”, buttons “+ Wishlist” and “I own it…”); the picker lists every edition
-   of the album (MusicBrainz release group → releases, Discogs master → versions) with format, country, year,
-   label, catalogue number and barcode, filterable by format and country. Used by “I own it…” and “Got it”.
-   A barcode search still offers “+ Collection” directly, plus “Other editions…”. Requires turning
-   `providers/musicbrainz.js` into a factory with an injectable `fetchFn`, like Discogs, and recorded responses
-   in `tests/fixtures/`.
+1. **User tests v0.4.0 on the phone** (see `TESTING.md`, “Edition picker”), including an album found on Discogs.
 2. **Test on the live site**: scanning in Firefox on desktop and Android (camera over HTTPS, hosted
    barcode-detector), and check (F12, Network tab) that no request goes to jsdelivr.net.
    On each new device, re-enter the Discogs token and import an export if needed.

@@ -73,30 +73,52 @@
       <button type="button" class="btn btn--ghost btn--small" id="close-add">Close</button>
     </div>
 
-    <div class="add-modes">
-      <button type="button" class="btn" id="start-scan">Scan</button>
-      <label class="btn btn--ghost">
-        From a photo
-        <input type="file" id="photo" accept="image/*" capture="environment" class="visually-hidden">
-      </label>
+    <div id="search-view">
+      <div class="add-modes">
+        <button type="button" class="btn" id="start-scan">Scan</button>
+        <label class="btn btn--ghost">
+          From a photo
+          <input type="file" id="photo" accept="image/*" capture="environment" class="visually-hidden">
+        </label>
+      </div>
+
+      <div class="scanner" id="scanner" hidden>
+        <video id="scan-video" playsinline muted></video>
+        <div class="scanner__frame" aria-hidden="true"></div>
+        <button type="button" class="btn btn--small" id="stop-scan">Stop</button>
+      </div>
+
+      <form id="search-form" class="search">
+        <input type="text" name="barcode" inputmode="numeric" placeholder="Barcode" autocomplete="off">
+        <input type="text" name="artist" placeholder="Artist" autocomplete="off">
+        <input type="text" name="title" placeholder="Album title" autocomplete="off">
+        <input type="text" name="catno" placeholder="Catalogue number (e.g. PGLP21)" autocomplete="off">
+        <button type="submit" class="btn">Search</button>
+      </form>
+
+      <p class="status" id="status" role="status"></p>
+      <ul class="candidates" id="candidates"></ul>
     </div>
 
-    <div class="scanner" id="scanner" hidden>
-      <video id="scan-video" playsinline muted></video>
-      <div class="scanner__frame" aria-hidden="true"></div>
-      <button type="button" class="btn btn--small" id="stop-scan">Stop</button>
-    </div>
-
-    <form id="search-form" class="search">
-      <input type="text" name="barcode" inputmode="numeric" placeholder="Barcode" autocomplete="off">
-      <input type="text" name="artist" placeholder="Artist" autocomplete="off">
-      <input type="text" name="title" placeholder="Album title" autocomplete="off">
-      <input type="text" name="catno" placeholder="Catalogue number (e.g. PGLP21)" autocomplete="off">
-      <button type="submit" class="btn">Search</button>
-    </form>
-
-    <p class="status" id="status" role="status"></p>
-    <ul class="candidates" id="candidates"></ul>
+    <section class="picker" id="picker" hidden aria-labelledby="picker-title">
+      <div class="picker__top">
+        <div class="picker__head">
+          <button type="button" class="btn btn--ghost btn--small" id="picker-back">← Back</button>
+          <div>
+            <h3 class="card__title" id="picker-title"></h3>
+            <p class="card__artist" id="picker-artist"></p>
+          </div>
+        </div>
+        <p class="picker__question">Which edition do you own?</p>
+        <div class="picker__filters">
+          <select id="picker-format" aria-label="Format"></select>
+          <select id="picker-country" aria-label="Country"></select>
+          <input type="search" id="picker-text" placeholder="Label, catalogue no., year…" autocomplete="off" aria-label="Filter the editions">
+        </div>
+        <p class="picker__status" id="picker-status" role="status"></p>
+      </div>
+      <ul class="editions" id="picker-list"></ul>
+    </section>
   </dialog>
 
   <div class="toast" id="toast" role="status" hidden></div>

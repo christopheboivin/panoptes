@@ -10,7 +10,9 @@
  * hence no CORS preflight request.
  */
 
-import { DISCOGS_API, DISCOGS_MIN_DELAY_MS, SEARCH_LIMIT } from '../config.js';
+import {
+  DISCOGS_API, DISCOGS_MIN_DELAY_MS, SEARCH_LIMIT, EDITIONS_PAGE_SIZE, MAX_EDITION_PAGES,
+} from '../config.js';
 import { createThrottle } from './throttle.js';
 
 export const PROVIDER_ID = 'discogs';
@@ -64,13 +66,38 @@ export function toCandidate(result) {
     artist,
     year: result.year ? String(result.year) : '',
     format: formatDescriptions(result.format, result.format_quantity),
-    label: result.label?.[0] ?? '',
+    label: cleanArtistName(result.label?.[0] ?? ''),
     catno: result.catno && result.catno !== 'none' ? result.catno : '',
     barcode: pickBarcode(result.barcode),
     country: result.country ?? '',
     // master_id: the album (“master”); 0 or absent when Discogs has none for this release.
     source: { provider: PROVIDER_ID, id: String(result.id), groupId: result.master_id ? String(result.master_id) : '' },
     coverUrls: [result.cover_image, result.thumb].filter(isRealImage),
+  };
+}
+
+/**
+ * Converts a version of a master (/masters/{id}/versions) into a Candidate.
+ * Versions carry neither the artist nor the barcode: the artist is the
+ * album's, the barcode stays empty. Their “format” omits the medium, which is
+ * in major_formats: ["Vinyl"] + "LP, Album, Mono" -> 'Vinyl, LP, Album, Mono'.
+ * @param {object} version
+ * @param {object} album - the album (candidate or record) the versions belong to
+ */
+export function versionToCandidate(version, album) {
+  const released = String(version.released ?? '').slice(0, 4);
+  return {
+    title: version.title || album.title,
+    artist: album.artist ?? '',
+    year: /^\d{4}$/.test(released) && released !== '0000' ? released : '',
+    format: [...(version.major_formats ?? []), version.format].filter(Boolean).join(', '),
+    label: cleanArtistName(version.label ?? ''),
+    // Several spellings may be listed (“KLP893, KLP-893”): keep the first.
+    catno: String(version.catno ?? '').split(',')[0].trim().replace(/^none$/i, ''),
+    barcode: '',
+    country: version.country ?? '',
+    source: { provider: PROVIDER_ID, id: String(version.id), groupId: album.source?.groupId ?? '' },
+    coverUrls: [version.thumb].filter(isRealImage),
   };
 }
 
@@ -89,29 +116,26 @@ export function buildSearchParams({ barcode = '', artist = '', title = '', catno
 
 const RETRY_DELAYS_MS = [2000, 5000];
 
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
 /**
  * @param {object} options
  * @param {() => string} options.getToken - returns the personal token (empty string if none)
  * @param {typeof fetch} [options.fetchFn] - replaceable in tests
+ * @param {(ms: number) => Promise<void>} [options.sleepFn] - replaceable in tests
  */
-export function createDiscogsProvider({ getToken, fetchFn = (...args) => fetch(...args) }) {
-  const throttle = createThrottle(DISCOGS_MIN_DELAY_MS);
+export function createDiscogsProvider({ getToken, fetchFn = (...args) => fetch(...args), sleepFn = sleep }) {
+  const throttle = createThrottle(DISCOGS_MIN_DELAY_MS, { sleep: sleepFn });
 
   /** Discogs answers 429 when the rate limit is reached: retry a little later. */
-  async function fetchWithRetry(url) {
+  async function getJson(url) {
+    let response;
     for (let attempt = 0; ; attempt += 1) {
       await throttle();
-      const response = await fetchFn(url);
-      if (response.status !== 429 || attempt >= RETRY_DELAYS_MS.length) return response;
-      await new Promise((resolve) => setTimeout(resolve, RETRY_DELAYS_MS[attempt]));
+      response = await fetchFn(url);
+      if (response.status !== 429 || attempt >= RETRY_DELAYS_MS.length) break;
+      await sleepFn(RETRY_DELAYS_MS[attempt]);
     }
-  }
-
-  async function search(criteria) {
-    const token = getToken();
-    if (!token) return [];
-    const url = `${DISCOGS_API}/database/search?${buildSearchParams(criteria, token)}`;
-    const response = await fetchWithRetry(url);
     if (response.status === 401) {
       throw new Error('Discogs rejects the saved token. Check it in Settings.');
     }
@@ -121,8 +145,33 @@ export function createDiscogsProvider({ getToken, fetchFn = (...args) => fetch(.
     if (!response.ok) {
       throw new Error(`Discogs error (${response.status}).`);
     }
-    const data = await response.json();
+    return response.json();
+  }
+
+  async function search(criteria) {
+    const token = getToken();
+    if (!token) return [];
+    const data = await getJson(`${DISCOGS_API}/database/search?${buildSearchParams(criteria, token)}`);
     return (data.results ?? []).map(toCandidate);
+  }
+
+  /**
+   * All the editions (versions) of an album (master), one page of candidates
+   * at a time. Works without a token too (the token raises the rate limit).
+   * @param {object} album - a candidate or record with source.groupId
+   * @returns {AsyncGenerator<Candidate[]>}
+   */
+  async function* listEditions(album) {
+    const masterId = album.source?.groupId;
+    if (!masterId) return;
+    for (let page = 1; page <= MAX_EDITION_PAGES; page += 1) {
+      const params = new URLSearchParams({ per_page: String(EDITIONS_PAGE_SIZE), page: String(page) });
+      const token = getToken();
+      if (token) params.set('token', token);
+      const data = await getJson(`${DISCOGS_API}/masters/${encodeURIComponent(masterId)}/versions?${params}`);
+      yield (data.versions ?? []).map((version) => versionToCandidate(version, album));
+      if (page >= (data.pagination?.pages ?? 1)) return;
+    }
   }
 
   return {
@@ -135,5 +184,6 @@ export function createDiscogsProvider({ getToken, fetchFn = (...args) => fetch(.
         ? search({ artist, title, catno })
         : Promise.resolve([])
     ),
+    listEditions,
   };
 }

@@ -42,17 +42,22 @@ Camera scanning cannot be tested by an agent: use the checklist in `TESTING.md` 
 
 - `js/main.js`: screen state and event wiring only; business logic lives elsewhere.
 - `js/models/`: record shape (`createRecord`, `validateRecord`, `toAlbum`), barcode validation, and
-  `match.js` (same edition / same album, graded SAME or PROBABLE). Pure.
+  `match.js` (same edition / same album, graded SAME or PROBABLE), `editions.js` (results grouped by album,
+  picker sorting and filters). Pure.
   A Collection record is one physical copy; a Wishlist record is an album (no edition details).
   Duplicates are allowed and only pointed out, never blocked.
 - `js/storage/`: `db.js` (the only IndexedDB code), `library.js` (business rules, export/import), `settings.js` (token).
-- `js/providers/`: data sources. Contract: `{ id, name, isConfigured, searchByBarcode, searchByText }`
-  returning Candidates `{ title, artist, year, format, label, catno, barcode, country, source: { provider, id, groupId }, coverUrls }`
-  (`id`: edition, `groupId`: album, both specific to that source). `catalog.js` queries them in order
-  (MusicBrainz first) and stops at the first with results. `throttle.js` spaces out requests.
+- `js/providers/`: data sources, created by factories with injectable `fetchFn` / `sleepFn`.
+  Contract: `{ id, name, isConfigured, searchByBarcode, searchByText, listEditions }` returning Candidates
+  `{ title, artist, year, format, label, catno, barcode, country, source: { provider, id, groupId }, coverUrls }`
+  (`id`: edition, `groupId`: album, both specific to that source); `listEditions(album)` is an async generator
+  yielding pages. `catalog.js` queries them in order (MusicBrainz first), stops at the first with results, and
+  routes `listEditions` to the album's own source. `throttle.js` spaces out requests.
+  Real responses for tests are in `tests/fixtures/`.
 - `js/scanner/`: barcode reading (native `BarcodeDetector`, else `vendor/barcode-detector`) and live camera scan.
 - `js/identify/`: extension point for recognising a cover from a photo (planned: OCR in `cover.js`).
-- `js/ui/render.js`: pure HTML generation.
+- `js/ui/render.js`: pure HTML generation. The app is mainly used **on a smartphone**: design for ~375 px
+  first (44 px touch targets, compact rows, filters that stay visible), check at 375 px in the preview.
 - `tests/`: `node:test` unit tests; inject fakes (storage, `fetchFn`) rather than touching the network.
 
 ## Conventions

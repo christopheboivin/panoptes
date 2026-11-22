@@ -2,6 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   toCandidate, splitTitle, cleanArtistName, formatDescriptions, pickBarcode, buildSearchParams, createDiscogsProvider,
+  versionToCandidate,
 } from '../js/providers/discogs.js';
 
 // Representative excerpt of a /database/search?type=release result.
@@ -93,4 +94,40 @@ test('searchByBarcode queries Discogs with the token and converts the results', 
 test('a rejected token gives an explicit message', async () => {
   const discogs = createDiscogsProvider({ getToken: () => 'faux', fetchFn: async () => fakeResponse(401) });
   await assert.rejects(discogs.searchByText({ artist: 'X' }), /token/);
+});
+
+test('versionToCandidate completes a master version with the album', async () => {
+  const { readFileSync } = await import('node:fs');
+  const { versions } = JSON.parse(readFileSync(new URL('./fixtures/discogs-master-versions.json', import.meta.url)));
+  const album = { title: 'Kind Of Blue', artist: 'Miles Davis', source: { provider: 'discogs', groupId: '5460' } };
+  const [first, second] = versions.map((version) => versionToCandidate(version, album));
+  assert.equal(first.artist, 'Miles Davis');
+  assert.equal(first.format, 'Vinyl, LP, Album, Mono');
+  assert.equal(first.label, 'Coronet');
+  assert.equal(first.country, 'Australia');
+  assert.equal(first.year, '1959');
+  assert.equal(first.barcode, '');
+  assert.deepEqual(first.source, { provider: 'discogs', id: '26677274', groupId: '5460' });
+  assert.equal(first.coverUrls.length, 1);
+  assert.equal(second.catno, 'KLP893'); // first of “KLP893, KLP-893, KLP - 893”
+});
+
+test('listEditions pages through the versions of the master', async () => {
+  const { readFileSync } = await import('node:fs');
+  const page = JSON.parse(readFileSync(new URL('./fixtures/discogs-master-versions.json', import.meta.url)));
+  const urls = [];
+  const responses = [page, { pagination: { page: 2, pages: 2 }, versions: [] }];
+  const discogs = createDiscogsProvider({
+    getToken: () => '',
+    fetchFn: async (url) => { urls.push(new URL(url)); return fakeResponse(200, responses.shift()); },
+    sleepFn: async () => {},
+  });
+  const pages = [];
+  for await (const editions of discogs.listEditions({ title: 'Kind Of Blue', artist: 'Miles Davis', source: { provider: 'discogs', groupId: '5460' } })) {
+    pages.push(editions);
+  }
+  assert.deepEqual(pages.map((p) => p.length), [3, 0]);
+  assert.equal(urls[0].pathname, '/masters/5460/versions');
+  assert.equal(urls[1].searchParams.get('page'), '2');
+  assert.equal(urls[0].searchParams.has('token'), false);
 });

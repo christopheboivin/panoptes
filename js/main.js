@@ -8,22 +8,30 @@ import * as db from './storage/db.js';
 import { createLibrary, STATUS } from './storage/library.js';
 import { createSettings } from './storage/settings.js';
 import { findRelations, isCertain } from './models/match.js';
-import { provider as musicbrainz } from './providers/musicbrainz.js';
+import {
+  groupByAlbum, sortEditions, filterOptions, filterEditions,
+} from './models/editions.js';
+import { createMusicBrainzProvider } from './providers/musicbrainz.js';
 import { createDiscogsProvider } from './providers/discogs.js';
 import { createCatalog } from './providers/catalog.js';
 import { isValidBarcode, normalizeBarcode } from './models/barcode.js';
 import { identifyImage, hasImageIdentifiers } from './identify/index.js';
 import { startLiveScan } from './scanner/camera.js';
 import { readBarcodeFromImage } from './scanner/barcode-engine.js';
-import { renderLibrary, renderCandidates } from './ui/render.js';
+import {
+  renderLibrary, renderCandidates, renderAlbums, renderEditions, renderFilterOptions,
+} from './ui/render.js';
 
 const library = createLibrary(db);
 const settings = createSettings();
 // Query order: MusicBrainz first, Discogs if MusicBrainz finds nothing.
 const catalog = createCatalog([
-  musicbrainz,
+  createMusicBrainzProvider(),
   createDiscogsProvider({ getToken: settings.getDiscogsToken }),
 ]);
+
+/** How search results are shown: grouped by album (text search) or edition by edition (barcode). */
+const RESULTS = Object.freeze({ ALBUMS: 'albums', EDITIONS: 'editions' });
 
 const state = {
   records: [],
@@ -33,6 +41,13 @@ const state = {
   filter: '',
   candidates: [],
   candidatesSource: '',
+  resultsMode: RESULTS.EDITIONS,
+  /** Results grouped by album (RESULTS.ALBUMS mode): groupByAlbum(candidates). */
+  albums: [],
+  /** Edition picker: { album, editions, filters: { format, country, text }, loading, error } or null. */
+  picker: null,
+  /** Scroll position of the results, restored when leaving the picker. */
+  resultsScroll: 0,
   stopScan: null,
 };
 
@@ -50,6 +65,15 @@ const els = {
   settingsDialog: $('settings-dialog'),
   settingsForm: $('settings-form'),
   tokenState: $('discogs-token-state'),
+  searchView: $('search-view'),
+  picker: $('picker'),
+  pickerTitle: $('picker-title'),
+  pickerArtist: $('picker-artist'),
+  pickerFormat: $('picker-format'),
+  pickerCountry: $('picker-country'),
+  pickerText: $('picker-text'),
+  pickerStatus: $('picker-status'),
+  pickerList: $('picker-list'),
 };
 
 /* ---------- Display ---------- */
@@ -75,9 +99,21 @@ function render() {
 }
 
 function renderCandidateList() {
+  if (state.resultsMode === RESULTS.ALBUMS) {
+    state.albums = groupByAlbum(state.candidates);
+    const items = state.albums.map(({ album, editions }) => ({
+      album,
+      editionCount: editions.length,
+      relations: findRelations(album, state.records),
+      canPick: catalog.canListEditions(album),
+    }));
+    els.candidates.innerHTML = renderAlbums(items, state.candidatesSource);
+    return;
+  }
   const items = state.candidates.map((candidate) => ({
     candidate,
     relations: findRelations(candidate, state.records),
+    canPick: catalog.canListEditions(candidate),
   }));
   els.candidates.innerHTML = renderCandidates(items, state.candidatesSource);
 }
@@ -134,12 +170,14 @@ function cancelSearch() {
  * search() returns { candidates, providerName?, skipped?, detail? }; runSearch returns
  * that result, or null on error (already shown to the user) or when a newer
  * search or scan replaced this one (nothing is shown).
+ * @param {string} mode - RESULTS.ALBUMS or RESULTS.EDITIONS
  */
-async function runSearch(label, search) {
+async function runSearch(label, search, mode = RESULTS.EDITIONS) {
   cancelSearch();
   const id = searchId;
   state.candidates = [];
   state.candidatesSource = '';
+  state.resultsMode = mode;
   renderCandidateList();
   setStatus(`${label}…`);
   try {
@@ -148,9 +186,10 @@ async function runSearch(label, search) {
     state.candidates = result.candidates;
     state.candidatesSource = result.providerName ?? '';
     renderCandidateList();
-    const count = result.candidates.length;
+    const count = mode === RESULTS.ALBUMS ? state.albums.length : result.candidates.length;
+    const noun = mode === RESULTS.ALBUMS ? 'album' : 'result';
     const where = result.providerName ? ` on ${result.providerName}` : '';
-    const summary = count === 0 ? 'No record found.' : `${count} result${count > 1 ? 's' : ''}${where}.`;
+    const summary = count === 0 ? 'No record found.' : `${count} ${noun}${count > 1 ? 's' : ''}${where}.`;
     setStatus([result.detail, summary, discogsHint(result)].filter(Boolean).join(' '));
     return result;
   } catch (error) {
@@ -255,20 +294,120 @@ async function startScanning() {
   }
 }
 
+/* ---------- Edition picker ---------- */
+
+/** Shows the picker instead of the search (or back), keeping the results' scroll position. */
+function showPicker(visible) {
+  if (visible && !els.searchView.hidden) state.resultsScroll = els.dialog.scrollTop;
+  els.searchView.hidden = visible;
+  els.picker.hidden = !visible;
+  els.dialog.scrollTop = visible ? 0 : state.resultsScroll;
+}
+
 /**
- * “Got it” on a Wishlist album: search its editions so the user picks the one
- * they own; adding it to the Collection then offers to remove the album from
- * the Wishlist (see offerToRemoveFromWishlist).
+ * Opens the picker on an album and loads its editions page by page, showing
+ * them as they arrive. Leaving the picker (or any new search) stops the loading.
+ */
+async function openPicker(album) {
+  stopScanning();
+  cancelSearch();
+  const id = searchId;
+  state.picker = { album, editions: [], filters: { format: '', country: '', text: '' }, loading: true, error: '' };
+  els.pickerTitle.textContent = album.title;
+  els.pickerArtist.textContent = [album.artist, catalog.sourceName(album)].filter(Boolean).join(' · ');
+  els.pickerText.value = '';
+  showPicker(true);
+  renderPicker();
+  try {
+    for await (const page of catalog.listEditions(album)) {
+      if (id !== searchId) return; // also stops the loading of the next pages
+      state.picker.editions = sortEditions([...state.picker.editions, ...page]);
+      renderPicker();
+    }
+  } catch (error) {
+    if (id !== searchId) return;
+    state.picker.error = error.message;
+  }
+  if (id !== searchId) return;
+  state.picker.loading = false;
+  renderPicker();
+}
+
+function closePicker() {
+  cancelSearch();
+  state.picker = null;
+  showPicker(false);
+  renderCandidateList();
+}
+
+/** Last <option>s written, so that they are only rewritten when they change (an open list would close). */
+const filterHtml = { format: '', country: '' };
+
+function renderPicker() {
+  const { picker } = state;
+  if (!picker) return;
+  const { formats, countries } = filterOptions(picker.editions);
+  const formatHtml = renderFilterOptions('All formats', formats, picker.filters.format);
+  const countryHtml = renderFilterOptions('All countries', countries, picker.filters.country);
+  if (formatHtml !== filterHtml.format) els.pickerFormat.innerHTML = filterHtml.format = formatHtml;
+  if (countryHtml !== filterHtml.country) els.pickerCountry.innerHTML = filterHtml.country = countryHtml;
+
+  const positions = new Map(picker.editions.map((edition, index) => [edition, index]));
+  const visible = filterEditions(picker.editions, picker.filters);
+  els.pickerList.innerHTML = renderEditions(visible.map((edition) => ({
+    edition,
+    index: positions.get(edition),
+    relations: findRelations(edition, state.records),
+  })));
+
+  const total = picker.editions.length;
+  const shown = visible.length === total ? `${total} edition${total === 1 ? '' : 's'}` : `${visible.length} of ${total} editions`;
+  els.pickerStatus.textContent = picker.error
+    ? `${picker.error}${total ? ` (${total} editions loaded)` : ''}`
+    : picker.loading
+      ? `Loading editions… ${total} so far.`
+      : total === 0 ? 'No edition found for this album.' : `${shown}. Compare with the label, the spine or the back cover.`;
+}
+
+/**
+ * “Got it” on a Wishlist album: the picker asks which edition is owned;
+ * adding it to the Collection then offers to remove the album from the
+ * Wishlist (see offerToRemoveFromWishlist). An album whose editions cannot be
+ * listed (added before album identifiers existed) is searched by name instead.
  */
 function findEditionsOf(album) {
   openAddDialog();
+  if (catalog.canListEditions(album)) {
+    openPicker(album);
+    return;
+  }
   els.searchForm.elements.artist.value = album.artist;
   els.searchForm.elements.title.value = album.title;
   const criteria = { artist: album.artist, title: album.title, catno: '' };
-  runSearch(`Searching for the editions of “${album.title}”`, async () => ({
+  runSearch(`Searching for “${album.title}”`, async () => ({
     ...(await catalog.searchByText(criteria)),
-    detail: 'Pick the edition you own, then press “+ Collection”.',
-  }));
+    detail: 'Choose the album, then “I own it…” to pick your edition.',
+  }), RESULTS.ALBUMS);
+}
+
+/**
+ * Adds a search result or an edition: a copy to the Collection, or its album
+ * to the Wishlist. The scanned barcode is kept when the source does not know
+ * the edition's.
+ */
+async function addToLibrary(candidate, status) {
+  const scanned = normalizeBarcode(els.searchForm.elements.barcode.value);
+  const data = status === STATUS.OWNED && !candidate.barcode && scanned ? { ...candidate, barcode: scanned } : candidate;
+  // Computed before adding: the new record must not count as a match of itself.
+  const { wanted } = findRelations(data, state.records);
+  try {
+    const record = await library.add(data, status);
+    toast(`“${record.title}” added to your ${status === STATUS.OWNED ? 'collection' : 'wishlist'}.`);
+    if (status === STATUS.OWNED) await offerToRemoveFromWishlist(wanted);
+  } catch (error) {
+    toast(`Could not add this record: ${error.message}`);
+  }
+  await refresh();
 }
 
 /** Asks whether to remove from the Wishlist the album of an edition just added to the Collection. */
@@ -285,6 +424,8 @@ async function offerToRemoveFromWishlist(wanted) {
 
 function openAddDialog() {
   cancelSearch();
+  state.picker = null;
+  showPicker(false);
   state.candidates = [];
   renderCandidateList();
   setStatus('');
@@ -380,7 +521,12 @@ function bindEvents() {
 
   $('open-add').addEventListener('click', openAddDialog);
   $('close-add').addEventListener('click', () => els.dialog.close());
-  els.dialog.addEventListener('close', stopScanning);
+  els.dialog.addEventListener('close', () => {
+    // The event arrives asynchronously: the dialog may already have been reopened (“Got it”).
+    if (els.dialog.open) return;
+    stopScanning();
+    cancelSearch(); // stops loading editions or results nobody will see
+  });
 
   $('start-scan').addEventListener('click', startScanning);
   $('stop-scan').addEventListener('click', () => { stopScanning(); setStatus(''); });
@@ -403,7 +549,7 @@ function bindEvents() {
       catno: String(form.get('catno')),
     };
     if (Object.values(criteria).some((value) => value.trim())) {
-      runSearch('Searching', () => catalog.searchByText(criteria));
+      runSearch('Searching', () => catalog.searchByText(criteria), RESULTS.ALBUMS);
       return;
     }
     const barcode = normalizeBarcode(form.get('barcode'));
@@ -414,25 +560,43 @@ function bindEvents() {
     setStatus('Enter a barcode, an artist, a title or a catalogue number.');
   });
 
+  // Results: data-act = own (add to the Collection), wish (add to the Wishlist), pick (open the picker).
   els.candidates.addEventListener('click', async (event) => {
-    const button = event.target.closest('button[data-add]');
+    const button = event.target.closest('button[data-act]');
     if (!button) return;
-    const candidate = state.candidates[Number(button.dataset.index)];
-    const status = button.dataset.add;
-    // If the source does not know the edition's barcode, keep the one from the record in hand.
-    const scanned = normalizeBarcode(els.searchForm.elements.barcode.value);
-    const data = status === STATUS.OWNED && !candidate.barcode && scanned ? { ...candidate, barcode: scanned } : candidate;
-    // Computed before adding: the new record must not count as a match of itself.
-    const { wanted } = findRelations(data, state.records);
-    try {
-      const record = await library.add(data, status);
-      toast(`“${record.title}” added to your ${status === STATUS.OWNED ? 'collection' : 'wishlist'}.`);
-      if (status === STATUS.OWNED) await offerToRemoveFromWishlist(wanted);
-    } catch (error) {
-      toast(`Could not add this record: ${error.message}`);
+    const index = Number(button.dataset.index);
+    const item = state.resultsMode === RESULTS.ALBUMS ? state.albums[index]?.album : state.candidates[index];
+    if (!item) return;
+    if (button.dataset.act === 'pick') {
+      openPicker(item);
+      return;
     }
-    await refresh();
+    await addToLibrary(item, button.dataset.act === 'wish' ? STATUS.WANTED : STATUS.OWNED);
     renderCandidateList();
+  });
+
+  $('picker-back').addEventListener('click', closePicker);
+  els.pickerFormat.addEventListener('change', () => {
+    if (!state.picker) return;
+    state.picker.filters.format = els.pickerFormat.value;
+    renderPicker();
+  });
+  els.pickerCountry.addEventListener('change', () => {
+    if (!state.picker) return;
+    state.picker.filters.country = els.pickerCountry.value;
+    renderPicker();
+  });
+  els.pickerText.addEventListener('input', () => {
+    if (!state.picker) return;
+    state.picker.filters.text = els.pickerText.value;
+    renderPicker();
+  });
+  els.pickerList.addEventListener('click', async (event) => {
+    const button = event.target.closest('button[data-act="own"]');
+    const edition = state.picker?.editions[Number(button?.dataset.index)];
+    if (!edition) return;
+    await addToLibrary(edition, STATUS.OWNED);
+    renderPicker();
   });
 
   $('export').addEventListener('click', () => exportLibrary().catch((error) => toast(error.message)));

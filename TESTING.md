@@ -23,7 +23,19 @@ and note the date, browser and device in `NOTES.md`.
 - [ ] Catalogue number search (e.g. PGLP21).
 - [ ] Unknown barcode, then search by artist/title: the scanned code is saved with the chosen record.
 - [ ] Add to Collection, add to Wishlist, “Got it”, Remove; the counters update.
-- [ ] A result already in the library shows “Already in your collection/wishlist”.
+- [ ] A result already in the library shows “In your collection (1 copy)” and offers “+ Another copy”.
+- [ ] Artist + title search: results grouped by album; **I own it…** opens the edition picker.
+
+## Edition picker (on the phone)
+
+- [ ] Editions appear as they load (“Loading editions… 100 so far”); a large album (e.g. *Kind of Blue*) stays usable.
+- [ ] Album, question and filters stay at the top while scrolling the list.
+- [ ] Format and Country filters, and the text filter (e.g. a catalogue number typed without spaces).
+- [ ] **This one** adds the edition; the row then shows “In your collection” and “Another copy”.
+- [ ] **← Back** returns to the results at the same scroll position.
+- [ ] **Got it** on a wishlist album opens the picker; choosing an edition asks to remove the album from the wishlist.
+- [ ] Barcode search, then **Other editions…**: the scanned code is saved with the edition chosen.
+- [ ] With a Discogs token: an album found on Discogs lists its versions (no barcode shown: Discogs does not give it there).
 - [ ] Export, then Import of the same file on another browser: same records, token not included in the file.
 
 ## Settings

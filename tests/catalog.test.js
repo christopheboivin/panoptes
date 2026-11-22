@@ -51,3 +51,22 @@ test('throws the first error if no source finds anything', async () => {
   const second = fakeProvider('Discogs');
   await assert.rejects(createCatalog([first, second]).searchByBarcode('123'), /MusicBrainz unavailable/);
 });
+
+test('the editions of an album are asked of the source that found it', async () => {
+  const asked = [];
+  const withEditions = (id) => ({
+    ...fakeProvider(id),
+    id,
+    async* listEditions(album) { asked.push([id, album.source.groupId]); yield [{ title: 'E1' }]; },
+  });
+  const catalog = createCatalog([withEditions('musicbrainz'), withEditions('discogs')]);
+  const album = { title: 'A', source: { provider: 'discogs', id: '1', groupId: '7' } };
+  assert.equal(catalog.canListEditions(album), true);
+  assert.equal(catalog.canListEditions({ source: { provider: 'discogs', id: '1', groupId: '' } }), false);
+  assert.equal(catalog.canListEditions({ source: { provider: 'unknown', groupId: '7' } }), false);
+  assert.equal(catalog.sourceName(album), 'discogs');
+  const pages = [];
+  for await (const page of catalog.listEditions(album)) pages.push(page);
+  assert.deepEqual(asked, [['discogs', '7']]);
+  assert.equal(pages.length, 1);
+});

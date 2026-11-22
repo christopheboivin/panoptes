@@ -1,0 +1,55 @@
+{
+  "pagination": {
+    "page": 1,
+    "pages": 7,
+    "per_page": 100,
+    "items": 630
+  },
+  "versions": [
+    {
+      "id": 26677274,
+      "label": "Coronet (2)",
+      "country": "Australia",
+      "title": "Kind Of Blue",
+      "major_formats": [
+        "Vinyl"
+      ],
+      "format": "LP, Album, Mono",
+      "catno": "KLP893",
+      "released": "1959",
+      "status": "Accepted",
+      "resource_url": "https://api.discogs.com/releases/26677274",
+      "thumb": "https://i.discogs.com/_LiSqi2bHzi2Kq3BySA3b0bk1H-pz7k9VtmIb4L2ZXk/rs:fit/g:sm/q:40/h:150/w:150/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTI2Njc3/Mjc0LTE2ODA4NjE0/NzAtMTcwMi5qcGVn.jpeg"
+    },
+    {
+      "id": 4169354,
+      "label": "Coronet (2)",
+      "country": "Australia",
+      "title": "Kind Of Blue",
+      "major_formats": [
+        "Vinyl"
+      ],
+      "format": "LP, Album, Mono",
+      "catno": "KLP893, KLP-893, KLP - 893",
+      "released": "1959",
+      "status": "Accepted",
+      "resource_url": "https://api.discogs.com/releases/4169354",
+      "thumb": "https://i.discogs.com/AA_sEbdU90c4l5qrBDxECwBqPNfEfRRIon7U4dBzhus/rs:fit/g:sm/q:40/h:150/w:150/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTQxNjkz/NTQtMTM2Mzg0NzE3/MC03MzkzLmpwZWc.jpeg"
+    },
+    {
+      "id": 23225960,
+      "label": "Columbia",
+      "country": "US",
+      "title": "Kind Of Blue",
+      "major_formats": [
+        "Vinyl"
+      ],
+      "format": "LP, Album, Misprint, Repress, Stereo",
+      "catno": "CS 8163",
+      "released": "1959",
+      "status": "Accepted",
+      "resource_url": "https://api.discogs.com/releases/23225960",
+      "thumb": "https://i.discogs.com/IO3BmpTZMWEc3kim7_T698Ei9l4gED4wRadUKd29oOI/rs:fit/g:sm/q:40/h:150/w:150/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTIzMjI1/OTYwLTE2NTI1NDk2/MzMtOTUxNC5qcGVn.jpeg"
+    }
+  ]
+}

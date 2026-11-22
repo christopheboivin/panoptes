@@ -4,7 +4,15 @@ Format: [Keep a Changelog](https://keepachangelog.com/). Versions follow `APP_VE
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-11-22
+
 ### Added
+- **Edition picker**, designed for a phone screen: “Which edition do you own?” lists every edition of an album
+  (MusicBrainz release group, Discogs master), loaded page by page, with Format and Country filters and a text
+  filter (label, catalogue number, year). Album, question and filters stay visible while the list scrolls.
+- Text search results are grouped by album (“I own it…” opens the picker); barcode results offer “Other editions…”.
+- `listEditions()` in both sources; MusicBrainz is now created by `createMusicBrainzProvider()` (testable, like Discogs).
+- Recorded MusicBrainz and Discogs responses in `tests/fixtures/`.
 - Records keep the album identifier of their source (`source.groupId`: MusicBrainz release group, Discogs master).
 - Search results and cards point out copies of the same edition, other editions of the same album and albums on
   the wishlist (`models/match.js`: same identifier, barcode, label + catalogue number, or artist + title).
@@ -13,7 +21,9 @@ Format: [Keep a Changelog](https://keepachangelog.com/). Versions follow `APP_VE
 ### Changed
 - Several copies of the same edition can now be added (“+ Another copy”); duplicates are pointed out, never blocked.
 - The wishlist holds albums: adding to it drops the edition details of the result that was clicked.
-- “Got it” on a wishlist album searches its editions, so the edition actually owned is recorded.
+- “Got it” on a wishlist album opens the edition picker, so the edition actually owned is recorded.
+- Searches ask for 50 results instead of 15, since results are grouped by album.
+- Discogs label names lose their “(2)” namesake suffix.
 
 ## [0.3.0] - 2026-11-22
 

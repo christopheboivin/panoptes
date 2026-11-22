@@ -1,7 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  escapeHtml, candidateHints, recordHints, renderCandidates, renderLibrary,
+  escapeHtml, candidateHints, recordHints, renderCandidates, renderLibrary, renderAlbums, renderEditions,
+  renderFilterOptions,
 } from '../js/ui/render.js';
 import { MATCH } from '../js/models/match.js';
 import { STATUS } from '../js/models/record.js';
@@ -51,4 +52,31 @@ test('renderLibrary escapes record data and shows hints', () => {
   const html = renderLibrary([record], { status: STATUS.OWNED, filter: '' }, new Map([['a', { ...none, copies: [same] }]]));
   assert.doesNotMatch(html, /<script>/);
   assert.match(html, /2 copies of this edition/);
+});
+
+test('renderAlbums: “I own it…” when the editions can be listed, direct add otherwise', () => {
+  const album = { title: 'Kind of Blue', artist: 'Miles Davis', year: '1959', format: 'CD', coverUrls: [] };
+  const pickable = renderAlbums([{ album, editionCount: 12, relations: { ...none, otherEditions: [same] }, canPick: true }]);
+  assert.match(pickable, /data-act="pick"[^>]*>I own it…/);
+  assert.match(pickable, /12 editions in these results/);
+  assert.match(pickable, /In your collection \(1 copy\)/);
+  const single = renderAlbums([{ album, editionCount: 1, relations: none, canPick: false }]);
+  assert.match(single, /data-act="own"[^>]*>\+ Collection/);
+  assert.match(single, /1959 · CD/);
+});
+
+test('renderEditions: compact rows keeping the index in the full list', () => {
+  const edition = { year: '1959', country: 'US', format: '12" Vinyl', label: 'Columbia', catno: 'CL 1355', barcode: '', coverUrls: [] };
+  const html = renderEditions([{ edition, index: 7, relations: none }]);
+  assert.match(html, /1959 · US · 12&quot; Vinyl/);
+  assert.match(html, /Columbia – CL 1355/);
+  assert.match(html, /data-index="7"[^>]*>This one/);
+  assert.doesNotMatch(html, /Barcode/);
+  assert.match(renderEditions([{ edition, index: 0, relations: { ...none, copies: [same] } }]), />Another copy</);
+});
+
+test('renderFilterOptions keeps the selected value', () => {
+  const html = renderFilterOptions('All formats', [{ value: 'Vinyl', count: 3 }, { value: 'CD', count: 1 }], 'CD');
+  assert.match(html, /<option value="">All formats<\/option>/);
+  assert.match(html, /<option value="CD" selected>CD \(1\)<\/option>/);
 });
