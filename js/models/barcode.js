@@ -11,6 +11,15 @@ export function normalizeBarcode(value) {
   return String(value ?? '').replace(/\D/g, '');
 }
 
+/**
+ * Single form of a code for comparisons: a UPC-A (12 digits) is the same
+ * code as the EAN-13 made of a 0 followed by those 12 digits.
+ */
+export function canonicalBarcode(value) {
+  const digits = normalizeBarcode(value);
+  return digits.length === 12 ? `0${digits}` : digits;
+}
+
 /** True if the code has a known length and a correct check digit. */
 export function isValidBarcode(value) {
   const digits = normalizeBarcode(value);

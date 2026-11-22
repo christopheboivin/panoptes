@@ -23,7 +23,7 @@ test('toCandidate converts a MusicBrainz release', () => {
   assert.equal(candidate.format, '12" Vinyl');
   assert.equal(candidate.label, 'Apple Records');
   assert.equal(candidate.catno, 'PCS 7088');
-  assert.deepEqual(candidate.source, { provider: 'musicbrainz', id: 'rel-1' });
+  assert.deepEqual(candidate.source, { provider: 'musicbrainz', id: 'rel-1', groupId: 'rg-1' });
   assert.equal(candidate.coverUrls.length, 2);
 });
 

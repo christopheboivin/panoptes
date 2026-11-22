@@ -13,7 +13,8 @@ Target browser: **Firefox** (desktop and Android). Chrome also works; Safari/iPh
 - Manual search by barcode, artist, title or catalogue number (e.g. PGLP21, useful for older records without a barcode).
 - Two data sources, queried in order: [MusicBrainz](https://musicbrainz.org), then [Discogs](https://www.discogs.com) if MusicBrainz finds nothing (Discogs has far better coverage of vinyl). The source of each result is shown.
 - If no source knows the barcode, search by artist, title or catalogue number instead: the scanned code is then saved with the record you pick.
-- Two lists: **Collection** and **Wishlist**, with a **Got it** button to move a record from the wishlist to the collection.
+- Two lists: **Collection** (one entry per physical copy, with its edition: country, label, catalogue number…) and **Wishlist** (albums, whatever the edition). **Got it** on a wishlist album searches its editions so you pick the one you own.
+- Several copies of an edition, and several editions of an album, are allowed: search results and cards only point them out (“In your collection (1 copy)”, “You own another edition of this album”, “On your wishlist”).
 - Data from MusicBrainz and Discogs; cover art from [Cover Art Archive](https://coverartarchive.org) and Discogs.
 - Local storage in the browser (IndexedDB), with **JSON export/import** for backups and for moving data between devices.
 
@@ -64,10 +65,12 @@ js/
   config.js                 Centralised settings
   models/record.js          Shape of a record, validation
   models/barcode.js         Barcode clean-up and check-digit validation
+  models/match.js           Same edition? same album? (hints only, never blocks)
   storage/db.js             IndexedDB access (the only module that knows about it)
   storage/library.js        Business rules: add, change status, export/import
   storage/settings.js       Per-device settings (Discogs token), never exported
   providers/catalog.js      Queries the sources in order, stops at the first result
+  providers/throttle.js     Minimum delay between two requests to a source
   providers/musicbrainz.js  MusicBrainz source: search and normalisation
   providers/discogs.js      Discogs source (personal token required)
   identify/index.js         Registry of visual identifiers (photo without a barcode)

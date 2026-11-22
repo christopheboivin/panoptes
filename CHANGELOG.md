@@ -4,6 +4,17 @@ Format: [Keep a Changelog](https://keepachangelog.com/). Versions follow `APP_VE
 
 ## [Unreleased]
 
+### Added
+- Records keep the album identifier of their source (`source.groupId`: MusicBrainz release group, Discogs master).
+- Search results and cards point out copies of the same edition, other editions of the same album and albums on
+  the wishlist (`models/match.js`: same identifier, barcode, label + catalogue number, or artist + title).
+- Adding an edition of a wanted album asks whether to remove the album from the wishlist.
+
+### Changed
+- Several copies of the same edition can now be added (“+ Another copy”); duplicates are pointed out, never blocked.
+- The wishlist holds albums: adding to it drops the edition details of the result that was clicked.
+- “Got it” on a wishlist album searches its editions, so the edition actually owned is recorded.
+
 ## [0.3.0] - 2026-11-22
 
 ### Fixed

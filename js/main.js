@@ -7,7 +7,7 @@ import { APP_VERSION, DISCOGS_TOKEN_PAGE } from './config.js';
 import * as db from './storage/db.js';
 import { createLibrary, STATUS } from './storage/library.js';
 import { createSettings } from './storage/settings.js';
-import { sameRelease } from './models/record.js';
+import { findRelations, isCertain } from './models/match.js';
 import { provider as musicbrainz } from './providers/musicbrainz.js';
 import { createDiscogsProvider } from './providers/discogs.js';
 import { createCatalog } from './providers/catalog.js';
@@ -27,6 +27,8 @@ const catalog = createCatalog([
 
 const state = {
   records: [],
+  /** findRelations() of each record (copies, other editions, wishlist), by record id. */
+  relations: new Map(),
   status: STATUS.OWNED,
   filter: '',
   candidates: [],
@@ -62,7 +64,7 @@ function render() {
   const visible = state.records
     .filter((r) => r.status === state.status && matchesFilter(r, state.filter))
     .sort((a, b) => a.artist.localeCompare(b.artist) || a.title.localeCompare(b.title));
-  els.library.innerHTML = renderLibrary(visible, state);
+  els.library.innerHTML = renderLibrary(visible, state, state.relations);
 
   for (const status of Object.values(STATUS)) {
     $(`count-${status}`).textContent = state.records.filter((r) => r.status === status).length;
@@ -75,13 +77,14 @@ function render() {
 function renderCandidateList() {
   const items = state.candidates.map((candidate) => ({
     candidate,
-    existing: state.records.find((record) => sameRelease(record, candidate)) ?? null,
+    relations: findRelations(candidate, state.records),
   }));
   els.candidates.innerHTML = renderCandidates(items, state.candidatesSource);
 }
 
 async function reload() {
   state.records = await library.list();
+  state.relations = new Map(state.records.map((record) => [record.id, findRelations(record, state.records)]));
   render();
 }
 
@@ -252,6 +255,34 @@ async function startScanning() {
   }
 }
 
+/**
+ * “Got it” on a Wishlist album: search its editions so the user picks the one
+ * they own; adding it to the Collection then offers to remove the album from
+ * the Wishlist (see offerToRemoveFromWishlist).
+ */
+function findEditionsOf(album) {
+  openAddDialog();
+  els.searchForm.elements.artist.value = album.artist;
+  els.searchForm.elements.title.value = album.title;
+  const criteria = { artist: album.artist, title: album.title, catno: '' };
+  runSearch(`Searching for the editions of “${album.title}”`, async () => ({
+    ...(await catalog.searchByText(criteria)),
+    detail: 'Pick the edition you own, then press “+ Collection”.',
+  }));
+}
+
+/** Asks whether to remove from the Wishlist the album of an edition just added to the Collection. */
+async function offerToRemoveFromWishlist(wanted) {
+  if (wanted.length === 0) return;
+  const [{ record }] = wanted;
+  const question = isCertain(wanted)
+    ? `“${record.title}” is on your wishlist. Remove it now that you own an edition?`
+    : `Your wishlist contains “${record.title}”${record.artist ? ` by ${record.artist}` : ''}, which looks like the same album. Remove it from your wishlist?`;
+  if (!window.confirm(question)) return;
+  for (const match of wanted) await library.remove(match.record.id);
+  toast(`“${record.title}” removed from your wishlist.`);
+}
+
 function openAddDialog() {
   cancelSearch();
   state.candidates = [];
@@ -332,11 +363,12 @@ function bindEvents() {
     if (!button) return;
     const record = state.records.find((r) => r.id === button.dataset.id);
     if (!record) return;
+    if (button.dataset.action === 'acquire') {
+      findEditionsOf(record);
+      return;
+    }
     try {
-      if (button.dataset.action === 'acquire') {
-        await library.setStatus(record, STATUS.OWNED);
-        toast(`“${record.title}” added to your collection.`);
-      } else if (button.dataset.action === 'remove') {
+      if (button.dataset.action === 'remove') {
         if (!window.confirm(`Remove “${record.title}”?`)) return;
         await library.remove(record.id);
       }
@@ -386,12 +418,16 @@ function bindEvents() {
     const button = event.target.closest('button[data-add]');
     if (!button) return;
     const candidate = state.candidates[Number(button.dataset.index)];
+    const status = button.dataset.add;
     // If the source does not know the edition's barcode, keep the one from the record in hand.
     const scanned = normalizeBarcode(els.searchForm.elements.barcode.value);
-    const data = candidate.barcode || !scanned ? candidate : { ...candidate, barcode: scanned };
+    const data = status === STATUS.OWNED && !candidate.barcode && scanned ? { ...candidate, barcode: scanned } : candidate;
+    // Computed before adding: the new record must not count as a match of itself.
+    const { wanted } = findRelations(data, state.records);
     try {
-      const record = await library.add(data, button.dataset.add);
-      toast(`“${record.title}” added to your ${record.status === STATUS.OWNED ? 'collection' : 'wishlist'}.`);
+      const record = await library.add(data, status);
+      toast(`“${record.title}” added to your ${status === STATUS.OWNED ? 'collection' : 'wishlist'}.`);
+      if (status === STATUS.OWNED) await offerToRemoveFromWishlist(wanted);
     } catch (error) {
       toast(`Could not add this record: ${error.message}`);
     }

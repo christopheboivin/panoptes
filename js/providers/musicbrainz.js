@@ -7,7 +7,8 @@
  *
  * A Candidate has the shape expected by createRecord():
  *   { title, artist, year, format, label, catno, barcode, country,
- *     source: { provider, id }, coverUrls: string[] }
+ *     source: { provider, id, groupId }, coverUrls: string[] }
+ * (id identifies the edition, groupId the album; groupId may be empty.)
  */
 
 import { MUSICBRAINZ_API, COVER_ART_API, MUSICBRAINZ_MIN_DELAY_MS, SEARCH_LIMIT } from '../config.js';
@@ -47,7 +48,7 @@ export function toCandidate(release) {
     catno: labelInfo?.['catalog-number'] ?? '',
     barcode: release.barcode ?? '',
     country: release.country ?? '',
-    source: { provider: PROVIDER_ID, id: release.id },
+    source: { provider: PROVIDER_ID, id: release.id, groupId: releaseGroupId ?? '' },
     coverUrls,
   };
 }

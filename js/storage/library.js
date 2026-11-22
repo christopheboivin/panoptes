@@ -6,7 +6,7 @@
  * replaced, or faked in tests.
  */
 
-import { createRecord, validateRecord, STATUS } from '../models/record.js';
+import { createRecord, validateRecord, toAlbum, STATUS } from '../models/record.js';
 
 export const EXPORT_APP = 'panoptes';
 export const EXPORT_SCHEMA_VERSION = 1;
@@ -48,8 +48,13 @@ export function createLibrary(storage) {
   return {
     list: () => storage.getAll(),
 
+    /**
+     * Adds a copy to the Collection, or an album to the Wishlist (the
+     * edition details of the candidate are then dropped). Duplicates are
+     * allowed: see models/match.js to tell the user about them.
+     */
     async add(candidate, status) {
-      const record = createRecord(candidate, status);
+      const record = createRecord(status === STATUS.WANTED ? toAlbum(candidate) : candidate, status);
       await storage.put(record);
       return record;
     },

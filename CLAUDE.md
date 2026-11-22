@@ -29,6 +29,7 @@ Read `NOTES.md` for the current state and next steps; `README.md` for features a
 
 ```sh
 node --test                  # unit tests (Node.js >= 20, no dependencies)
+deno test --allow-all tests/ # same tests with Deno (installed on the user's PC; Node is not)
 uv run --no-project python -m http.server 8080 --bind 127.0.0.1   # local server, then http://localhost:8080
 sha256sum -c vendor/SHA256SUMS   # check the hosted libraries
 ```
@@ -40,11 +41,15 @@ Camera scanning cannot be tested by an agent: use the checklist in `TESTING.md` 
 ## Code map
 
 - `js/main.js`: screen state and event wiring only; business logic lives elsewhere.
-- `js/models/`: record shape (`createRecord`, `validateRecord`) and barcode validation. Pure.
+- `js/models/`: record shape (`createRecord`, `validateRecord`, `toAlbum`), barcode validation, and
+  `match.js` (same edition / same album, graded SAME or PROBABLE). Pure.
+  A Collection record is one physical copy; a Wishlist record is an album (no edition details).
+  Duplicates are allowed and only pointed out, never blocked.
 - `js/storage/`: `db.js` (the only IndexedDB code), `library.js` (business rules, export/import), `settings.js` (token).
 - `js/providers/`: data sources. Contract: `{ id, name, isConfigured, searchByBarcode, searchByText }`
-  returning Candidates `{ title, artist, year, format, label, catno, barcode, country, source: { provider, id }, coverUrls }`.
-  `catalog.js` queries them in order and stops at the first with results.
+  returning Candidates `{ title, artist, year, format, label, catno, barcode, country, source: { provider, id, groupId }, coverUrls }`
+  (`id`: edition, `groupId`: album, both specific to that source). `catalog.js` queries them in order
+  (MusicBrainz first) and stops at the first with results. `throttle.js` spaces out requests.
 - `js/scanner/`: barcode reading (native `BarcodeDetector`, else `vendor/barcode-detector`) and live camera scan.
 - `js/identify/`: extension point for recognising a cover from a photo (planned: OCR in `cover.js`).
 - `js/ui/render.js`: pure HTML generation.

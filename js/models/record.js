@@ -1,7 +1,17 @@
 /**
  * Model of a record in the library.
  *
- * A record is a disc that is owned (collection) or wanted (wishlist).
+ * - A Collection record (owned) is one physical copy of a given edition:
+ *   several copies of the same edition, or several editions of the same
+ *   album, are allowed.
+ * - A Wishlist record (wanted) is an album, whatever the edition: it has no
+ *   edition details (see toAlbum()).
+ *
+ * source = { provider, id, groupId }: the data source that found the record,
+ * its identifier for the edition (id) and for the album (groupId:
+ * MusicBrainz release group or Discogs master). Both identifiers belong to
+ * that source only; see models/match.js to compare records across sources.
+ *
  * All library data goes through createRecord() and validateRecord(),
  * which guarantee a stable, serialisable shape.
  */
@@ -63,9 +73,12 @@ export function validateRecord(input) {
     throw new Error('Invalid record: missing title.');
   }
 
-  record.source = input.source && typeof input.source === 'object'
-    ? { provider: asText(input.source.provider), id: asText(input.source.id) }
-    : { provider: '', id: '' };
+  const source = input.source && typeof input.source === 'object' ? input.source : {};
+  record.source = {
+    provider: asText(source.provider),
+    id: asText(source.id),
+    groupId: asText(source.groupId),
+  };
   record.coverUrls = Array.isArray(input.coverUrls)
     ? input.coverUrls.filter((url) => typeof url === 'string' && url.startsWith('https://'))
     : [];
@@ -74,7 +87,16 @@ export function validateRecord(input) {
   return record;
 }
 
-/** Do two records refer to the same release (same external source)? */
-export function sameRelease(a, b) {
-  return Boolean(a.source?.id) && a.source.provider === b.source?.provider && a.source.id === b.source?.id;
+/**
+ * Album-level data of a candidate, for the Wishlist: the details of the
+ * edition that happened to be clicked (year, format, label, catalogue
+ * number, barcode, country, edition id) are left out on purpose.
+ */
+export function toAlbum(candidate) {
+  return {
+    title: candidate.title,
+    artist: candidate.artist,
+    coverUrls: candidate.coverUrls,
+    source: { provider: candidate.source?.provider, id: '', groupId: candidate.source?.groupId },
+  };
 }

@@ -14,6 +14,7 @@ const result = {
   format_quantity: 2,
   label: ['Real World Records', 'Real World Productions'],
   catno: 'PGLP21',
+  master_id: 2913437,
   barcode: ['884108013632', 'PGLP21 A1', '8 84108 01363 2'],
   cover_image: 'https://i.discogs.com/cover.jpeg',
   thumb: 'https://i.discogs.com/thumb.jpeg',
@@ -28,7 +29,7 @@ test('toCandidate converts a Discogs result', () => {
   assert.equal(candidate.label, 'Real World Records');
   assert.equal(candidate.catno, 'PGLP21');
   assert.equal(candidate.barcode, '884108013632');
-  assert.deepEqual(candidate.source, { provider: 'discogs', id: '28457123' });
+  assert.deepEqual(candidate.source, { provider: 'discogs', id: '28457123', groupId: '2913437' });
   assert.deepEqual(candidate.coverUrls, ['https://i.discogs.com/cover.jpeg', 'https://i.discogs.com/thumb.jpeg']);
 });
 
@@ -38,6 +39,7 @@ test('toCandidate tolerates an incomplete result and ignores empty images', () =
   assert.equal(candidate.artist, '');
   assert.equal(candidate.catno, '');
   assert.equal(candidate.format, '');
+  assert.equal(candidate.source.groupId, ''); // no master
   assert.deepEqual(candidate.coverUrls, []);
 });
 

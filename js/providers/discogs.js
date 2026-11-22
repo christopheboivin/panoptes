@@ -68,7 +68,8 @@ export function toCandidate(result) {
     catno: result.catno && result.catno !== 'none' ? result.catno : '',
     barcode: pickBarcode(result.barcode),
     country: result.country ?? '',
-    source: { provider: PROVIDER_ID, id: String(result.id) },
+    // master_id: the album (“master”); 0 or absent when Discogs has none for this release.
+    source: { provider: PROVIDER_ID, id: String(result.id), groupId: result.master_id ? String(result.master_id) : '' },
     coverUrls: [result.cover_image, result.thumb].filter(isRealImage),
   };
 }

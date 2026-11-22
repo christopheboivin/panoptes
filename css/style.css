@@ -97,7 +97,7 @@ input[type="text"], input[type="search"], input[type="password"] {
 .card__artist { color: var(--muted); font-size: 14px; }
 .card__meta { color: var(--muted); font-size: 13px; }
 .card__actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
-.badge { margin-top: 8px; color: var(--accent); font-size: 13px; font-weight: 600; }
+.card__hint { margin-top: 4px; color: var(--accent); font-size: 13px; font-weight: 600; }
 
 .empty { padding: 32px 0; color: var(--muted); text-align: center; }
 

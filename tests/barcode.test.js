@@ -1,6 +1,13 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { isValidBarcode, normalizeBarcode } from '../js/models/barcode.js';
+import { isValidBarcode, normalizeBarcode, canonicalBarcode } from '../js/models/barcode.js';
+
+test('canonicalBarcode writes a UPC-A in its EAN-13 form', () => {
+  assert.equal(canonicalBarcode('724384960650'), '0724384960650');
+  assert.equal(canonicalBarcode('0724384960650'), '0724384960650');
+  assert.equal(canonicalBarcode('96385074'), '96385074');
+  assert.equal(canonicalBarcode(''), '');
+});
 
 test('isValidBarcode accepts codes with a correct check digit', () => {
   assert.equal(isValidBarcode('0724384960650'), true); // EAN-13

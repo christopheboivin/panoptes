@@ -28,6 +28,24 @@ test('an export can be re-imported unchanged', async () => {
   );
 });
 
+test('the Collection accepts several copies; the Wishlist stores albums', async () => {
+  const lib = createLibrary(memoryStorage());
+  const edition = {
+    title: 'Kind of Blue', artist: 'Miles Davis', catno: 'CL 1355', country: 'US',
+    source: { provider: 'musicbrainz', id: 'r1', groupId: 'g1' },
+  };
+  const first = await lib.add(edition, STATUS.OWNED);
+  const second = await lib.add(edition, STATUS.OWNED);
+  assert.notEqual(first.id, second.id);
+  assert.equal(second.catno, 'CL 1355');
+
+  const album = await lib.add(edition, STATUS.WANTED);
+  assert.equal(album.catno, '');
+  assert.equal(album.country, '');
+  assert.deepEqual(album.source, { provider: 'musicbrainz', id: '', groupId: 'g1' });
+  assert.equal((await lib.list()).length, 3);
+});
+
 test('import merges by identifier without duplicates', async () => {
   const lib = createLibrary(memoryStorage());
   await lib.add({ title: 'Blue Train' }, STATUS.OWNED);
