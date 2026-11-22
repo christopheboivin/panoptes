@@ -9,6 +9,6 @@
   "type": "module",
   "scripts": {
     "test": "node --test",
-    "start": "python -m http.server 8000"
+    "start": "uv run --no-project python -m http.server 8080 --bind 127.0.0.1"
   }
 }

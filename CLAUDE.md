@@ -29,11 +29,12 @@ Read `NOTES.md` for the current state and next steps; `README.md` for features a
 
 ```sh
 node --test                  # unit tests (Node.js >= 20, no dependencies)
-py -m http.server 8000       # local server on Windows (python3 on Linux/macOS), then http://localhost:8000
+uv run --no-project python -m http.server 8080 --bind 127.0.0.1   # local server, then http://localhost:8080
 sha256sum -c vendor/SHA256SUMS   # check the hosted libraries
 ```
 
-Node.js may be missing on the user's machine: say so instead of guessing test results.
+On the user's Windows machine, Python comes from uv: there is no `py`, `python` or `python3` command
+(use `uv run --no-project python …`). Node.js may be missing: say so instead of guessing test results.
 Camera scanning cannot be tested by an agent: use the checklist in `TESTING.md` and ask the user.
 
 ## Code map

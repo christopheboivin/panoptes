@@ -3,9 +3,9 @@
   "configurations": [
     {
       "name": "panoptes",
-      "runtimeExecutable": "py",
-      "runtimeArgs": ["-m", "http.server", "8000"],
-      "port": 8000
+      "runtimeExecutable": "uv",
+      "runtimeArgs": ["run", "--no-project", "python", "-m", "http.server", "8080", "--bind", "127.0.0.1"],
+      "port": 8080
     }
   ]
 }

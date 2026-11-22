@@ -30,14 +30,16 @@ On GitHub Pages, all projects of the same account share the `<account>.github.io
 
 ## Running locally
 
+Any Python 3 will do; the simplest is [uv](https://docs.astral.sh/uv/), which works the same on every system:
+
 ```sh
-py -m http.server 8000      # Windows (official Python launcher)
-python3 -m http.server 8000 # Linux / macOS
+uv run --no-project python -m http.server 8080 --bind 127.0.0.1   # with uv (Windows, Linux, macOS)
+python3 -m http.server 8080 --bind 127.0.0.1                      # with a system Python (Linux / macOS)
 ```
 
-On Windows, `python` may open the Microsoft Store instead of Python: this is a system shortcut. Use `py`, or disable the shortcut in *Settings > Apps > Advanced app settings > App execution aliases*.
+On Windows without uv, `python` may open the Microsoft Store instead of Python: this is a system shortcut. Use the official launcher (`py -m http.server 8080 --bind 127.0.0.1`), or disable the shortcut in *Settings > Apps > Advanced app settings > App execution aliases*.
 
-Then open <http://localhost:8000>. The camera works on `localhost`; anywhere else, an **HTTPS** address is required (GitHub Pages is fine).
+Then open <http://localhost:8080>. The camera works on `localhost`; anywhere else, an **HTTPS** address is required (GitHub Pages is fine).
 
 Unit tests (Node.js 20 or later, no dependencies):
 
