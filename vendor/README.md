@@ -22,4 +22,6 @@ npm pack zxing-wasm@<expected version>
 ```
 
 Extract the archives (`tar -xzf …`), copy the two files and the `LICENSE` files again, update this table
-(`sha256sum`), then test a scan in Firefox.
+and `SHA256SUMS` (`sha256sum`), then test a scan in Firefox.
+
+`SHA256SUMS` is checked by CI on every push (`sha256sum -c vendor/SHA256SUMS`).

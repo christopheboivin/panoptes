@@ -2,7 +2,10 @@
   "name": "panoptes",
   "version": "0.2.0",
   "private": true,
-  "description": "Bibliothèque personnelle de vinyles et CD, avec scan de code-barres et liste d'envies.",
+  "description": "Personal library of vinyl records and CDs, with barcode scanning and a wishlist.",
+  "engines": {
+    "node": ">=20"
+  },
   "type": "module",
   "scripts": {
     "test": "node --test",

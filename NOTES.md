@@ -66,11 +66,8 @@ Discogs finds them.
 
 ## Environment and conventions
 
-- Project: `C:\Users\chris\code\panoptes`. Terminal: Git Bash.
-- Local server: `py -m http.server 8000`, then <http://localhost:8000> (check which Python command is available).
-- Permissions on the PC (especially deletion) are requested for the project folder only, never for the whole `code` folder.
-  To do so, connect `panoptes` itself to the conversation rather than `code`.
-- **Git: the user makes the commits and pushes himself in Git Bash**, with Claude as co-author
-  (`Co-Authored-By: Claude …` line as the last paragraph of the commit message). Claude only prepares the files.
-- Keep the user regularly informed of progress.
-- **Always present the plan and wait for the user's confirmation before changing the code.**
+Working rules, constraints and commands for AI agents are in [`CLAUDE.md`](CLAUDE.md) (loaded automatically by Claude Code).
+
+- Terminal: Git Bash. Node.js must be installed to run the tests locally (CI runs them on every push).
+- Permissions on the PC (especially deletion) are requested for the project folder only, never for its parent folder.
+  To do so, connect `panoptes` itself to the conversation rather than its parent.

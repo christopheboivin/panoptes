@@ -1,0 +1,32 @@
+name: Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+
+      - name: Unit tests
+        run: node --test
+
+      - name: Hosted libraries match their checksums
+        run: sha256sum -c vendor/SHA256SUMS
+
+      - name: Version numbers are in sync
+        run: |
+          pkg=$(node -p "require('./package.json').version")
+          app=$(sed -n "s/^export const APP_VERSION = '\(.*\)';$/\1/p" js/config.js)
+          echo "package.json: $pkg, js/config.js: $app"
+          test "$pkg" = "$app"
