@@ -1,0 +1,153 @@
+/* Panoptes — feuille de style unique, mobile d'abord, thèmes clair et sombre. */
+
+:root {
+  color-scheme: light dark;
+  --bg: light-dark(#f6f5f2, #121212);
+  --surface: light-dark(#ffffff, #1d1d1d);
+  --ink: light-dark(#18181a, #ececec);
+  --muted: light-dark(#66666c, #9a9aa0);
+  --line: light-dark(#e2e0da, #2c2c2c);
+  --accent: light-dark(#c2410c, #fb923c);
+  --accent-ink: light-dark(#ffffff, #1a1a1a);
+  --radius: 10px;
+  --gap: 12px;
+}
+
+* { box-sizing: border-box; min-width: 0; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  overflow-x: clip;
+}
+
+h1, h2, h3, p { margin: 0; }
+
+.visually-hidden {
+  position: absolute; width: 1px; height: 1px; overflow: hidden;
+  clip: rect(0 0 0 0); white-space: nowrap;
+}
+
+/* ---------- Boutons et champs ---------- */
+
+.btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-height: 44px; padding: 0 16px;
+  border: 1px solid var(--accent); border-radius: var(--radius);
+  background: var(--accent); color: var(--accent-ink);
+  font: inherit; font-weight: 600; cursor: pointer;
+}
+.btn--ghost { background: transparent; color: var(--accent); }
+.btn--small { min-height: 36px; padding: 0 12px; font-size: 14px; }
+.btn:focus-visible, input:focus-visible, .tab:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+label.btn:focus-within { outline: 3px solid var(--accent); outline-offset: 2px; }
+
+input[type="text"], input[type="search"], input[type="password"] {
+  width: 100%; min-height: 44px; padding: 0 12px;
+  border: 1px solid var(--line); border-radius: var(--radius);
+  background: var(--surface); color: var(--ink); font: inherit;
+}
+
+/* ---------- Structure ---------- */
+
+.topbar {
+  position: sticky; top: 0; z-index: 2;
+  display: flex; align-items: center; justify-content: space-between; gap: var(--gap);
+  padding: 12px max(4vw, 16px);
+  background: var(--bg); border-bottom: 1px solid var(--line);
+}
+.brand { font-size: 22px; letter-spacing: -0.01em; }
+
+.tabs { display: flex; gap: 8px; padding: 12px max(4vw, 16px) 0; }
+.tab {
+  min-height: 44px; padding: 0 16px; border: 0; border-radius: 999px;
+  background: transparent; color: var(--muted); font: inherit; font-weight: 600; cursor: pointer;
+}
+.tab[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
+.count { font-weight: 400; opacity: 0.8; }
+
+.content { padding: 12px max(4vw, 16px) 24px; max-width: 1240px; margin: 0 auto; }
+.filter { display: block; margin-bottom: 16px; }
+
+.footer {
+  display: flex; flex-wrap: wrap; align-items: center; gap: var(--gap);
+  padding: 16px max(4vw, 16px) 32px; border-top: 1px solid var(--line);
+}
+.version { margin-left: auto; color: var(--muted); font-size: 13px; }
+
+/* ---------- Cartes ---------- */
+
+.grid, .candidates { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--gap); }
+.grid { grid-template-columns: repeat(auto-fill, minmax(min(100%, 170px), 1fr)); }
+
+.card, .candidate {
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden;
+}
+.candidate { display: grid; grid-template-columns: 88px minmax(0, 1fr); align-items: start; }
+
+.cover { display: block; width: 100%; aspect-ratio: 1; object-fit: cover; background: var(--line); }
+.cover--empty {
+  background: radial-gradient(circle, var(--surface) 0 9%, var(--muted) 10% 12%, #222 13% 64%, var(--line) 65%);
+}
+
+.card__body { padding: 10px 12px 12px; display: grid; gap: 2px; align-content: start; }
+.card__title { font-size: 15px; line-height: 1.3; }
+.card__artist { color: var(--muted); font-size: 14px; }
+.card__meta { color: var(--muted); font-size: 13px; }
+.card__actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+.badge { margin-top: 8px; color: var(--accent); font-size: 13px; font-weight: 600; }
+
+.empty { padding: 32px 0; color: var(--muted); text-align: center; }
+
+/* ---------- Fenêtre d'ajout ---------- */
+
+dialog {
+  width: min(640px, 100vw); max-height: 100dvh; margin: auto; padding: 16px;
+  border: 0; border-radius: var(--radius); background: var(--bg); color: var(--ink);
+}
+dialog::backdrop { background: rgb(0 0 0 / 0.55); }
+@media (max-width: 600px) {
+  dialog { width: 100vw; height: 100dvh; max-width: none; border-radius: 0; }
+}
+
+.dialog__head { display: flex; align-items: center; justify-content: space-between; gap: var(--gap); margin-bottom: 16px; }
+.dialog__head h2 { font-size: 20px; }
+
+.add-modes { display: grid; grid-template-columns: 1fr 1fr; gap: var(--gap); margin-bottom: 16px; }
+
+.scanner { position: relative; margin-bottom: 16px; border-radius: var(--radius); overflow: hidden; background: #000; }
+.scanner[hidden] { display: none; }
+.scanner video { display: block; width: 100%; max-height: 50dvh; object-fit: cover; }
+.scanner__frame {
+  position: absolute; inset: 30% 12%;
+  border: 2px solid var(--accent); border-radius: 8px;
+  box-shadow: 0 0 0 100vmax rgb(0 0 0 / 0.35);
+}
+.scanner .btn { position: absolute; right: 12px; bottom: 12px; }
+
+.search { display: grid; gap: 8px; margin-bottom: 12px; }
+
+.card__source { margin-top: 4px; color: var(--muted); font-size: 12px; }
+
+/* ---------- Réglages ---------- */
+
+.settings { display: grid; gap: 12px; }
+.settings h3 { font-size: 16px; }
+.hint { color: var(--muted); font-size: 14px; }
+.hint a { color: var(--accent); }
+.field { display: grid; gap: 4px; font-size: 14px; }
+.settings__actions { display: flex; flex-wrap: wrap; gap: var(--gap); }
+.status { min-height: 1.5em; margin-bottom: 12px; color: var(--muted); font-size: 14px; }
+.status[data-tone="ok"] { color: var(--ink); padding: 10px 12px; border-left: 4px solid #15803d; background: var(--surface); }
+.status[data-tone="warn"] { color: var(--ink); padding: 10px 12px; border-left: 4px solid var(--accent); background: var(--surface); }
+
+/* ---------- Notification ---------- */
+
+.toast {
+  position: fixed; left: 50%; bottom: 24px; z-index: 10; transform: translateX(-50%);
+  max-width: calc(100vw - 32px); padding: 12px 16px; border-radius: var(--radius);
+  background: var(--ink); color: var(--bg); font-size: 14px;
+}
+.toast[hidden] { display: none; }

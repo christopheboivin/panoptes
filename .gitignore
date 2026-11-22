@@ -1,0 +1,5 @@
+node_modules/
+*.log
+
+# Sauvegardes de la bibliothèque personnelle : ne jamais les publier.
+panoptes-export-*.json
