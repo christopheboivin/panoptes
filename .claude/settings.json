@@ -17,6 +17,8 @@
     "deny": [
       "Read(./vendor/barcode-detector/pure.js)",
       "Read(./vendor/zxing-wasm/zxing_reader.wasm)",
+      "Read(./vendor/tesseract/*.js)",
+      "Read(./vendor/tesseract/*.gz)",
       "Read(./panoptes-export-*.json)"
     ]
   }

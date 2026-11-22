@@ -115,7 +115,8 @@ dialog::backdrop { background: rgb(0 0 0 / 0.55); }
 .dialog__head { display: flex; align-items: center; justify-content: space-between; gap: var(--gap); margin-bottom: 16px; }
 .dialog__head h2 { font-size: 20px; }
 
-.add-modes { display: grid; grid-template-columns: 1fr 1fr; gap: var(--gap); margin-bottom: 16px; }
+.add-modes { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 16px; }
+.add-modes .btn { padding: 0 8px; }
 
 .scanner { position: relative; margin-bottom: 16px; border-radius: var(--radius); overflow: hidden; background: #000; }
 .scanner[hidden] { display: none; }
@@ -126,6 +127,25 @@ dialog::backdrop { background: rgb(0 0 0 / 0.55); }
   box-shadow: 0 0 0 100vmax rgb(0 0 0 / 0.35);
 }
 .scanner .btn { position: absolute; right: 12px; bottom: 12px; }
+
+/* Catalogue-number reading: a wide, low frame (or tall and narrow for a spine). */
+.ocr { margin-bottom: 16px; }
+.ocr[hidden] { display: none; }
+.ocr__camera { margin-bottom: 8px; }
+.ocr__camera video { max-height: 45dvh; }
+.ocr--vertical .ocr__camera video { max-height: 60dvh; }
+.ocr__frame {
+  position: absolute; inset: 40% 6%;
+  border: 2px solid var(--accent); border-radius: 6px;
+  box-shadow: 0 0 0 100vmax rgb(0 0 0 / 0.45);
+}
+.ocr--vertical .ocr__frame { inset: 5% 40%; }
+.ocr__tools { display: flex; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
+.ocr__tools .btn { min-height: 44px; }
+.ocr__tools .btn[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); }
+.ocr__read { min-height: 1.5em; color: var(--muted); font-size: 14px; overflow-wrap: anywhere; }
+.ocr__suggestions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+.ocr__suggestions .btn { min-height: 48px; font-size: 18px; letter-spacing: 0.02em; }
 
 .search { display: grid; gap: 8px; margin-bottom: 12px; }
 .status { min-height: 1.5em; margin-bottom: 12px; color: var(--muted); font-size: 14px; }

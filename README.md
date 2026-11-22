@@ -9,7 +9,8 @@ Target browser: **Firefox** (desktop and Android). Chrome also works; Safari/iPh
 
 ## Features
 
-- Real-time barcode scanning with the camera, or from a photo (**From a photo**). The scanned code is displayed together with the result of its check-digit validation; nothing is looked up until the user confirms.
+- Real-time barcode scanning with the camera (**Barcode**), or from a photo (**Photo**). The scanned code is displayed together with the result of its check-digit validation; nothing is looked up until the user confirms.
+- **Catalogue-number reading** with the camera (**Cat. no.**), for records without a barcode: fit the number printed on the back cover or the spine (**↻ Spine**) in the frame and tap it among the suggestions. Text recognition runs on the phone (Tesseract.js, about 7 MB downloaded the first time); nothing is looked up until the user confirms.
 - Manual search by barcode, artist, title or catalogue number (e.g. PGLP21, useful for older records without a barcode).
 - Two data sources, queried in order: [MusicBrainz](https://musicbrainz.org), then [Discogs](https://www.discogs.com) if MusicBrainz finds nothing (Discogs has far better coverage of vinyl). The source of each result is shown.
 - If no source knows the barcode, search by artist, title or catalogue number instead: the scanned code is then saved with the record you pick.
@@ -76,8 +77,12 @@ js/
   providers/musicbrainz.js  MusicBrainz source: search and normalisation
   providers/discogs.js      Discogs source (personal token required)
   identify/index.js         Registry of visual identifiers (photo without a barcode)
+  models/catno.js           Catalogue-number suggestions from OCR text
   scanner/barcode-engine.js Barcode reading (native or fallback library)
-  scanner/camera.js         Real-time scanning
+  scanner/camera.js         Camera opening; real-time barcode scanning
+  scanner/ocr-engine.js     Text recognition (Tesseract.js, loaded on first use)
+  scanner/ocr-scan.js       Real-time catalogue-number reading inside the frame
+  scanner/frame.js          On-screen frame → camera pixels
   ui/render.js              HTML generation (with escaping)
 vendor/                     Hosted third-party libraries (see vendor/README.md)
 tests/                      Unit tests (node --test)
@@ -89,11 +94,12 @@ tests/                      Unit tests (node --test)
 - **Another data source**: create a module in `js/providers/` exposing `{ id, name, isConfigured, searchByBarcode, searchByText }` and returning candidates in the same format, then add it to the list passed to `createCatalog()` in `main.js` (the order of the list is the query order).
 - **Sync between devices**: provide a storage module exposing `getAll`, `put`, `putMany` and `remove`, and pass it to `createLibrary()` in `main.js`.
 
-## External dependency
+## External dependencies
 
-Only one: [barcode-detector](https://github.com/Sec-ant/barcode-detector) (MIT, based on ZXing), loaded only when the browser has no built-in barcode reader. **Firefox (the target browser) has none**, so this library is essential there.
+- [barcode-detector](https://github.com/Sec-ant/barcode-detector) (MIT, based on ZXing), loaded only when the browser has no built-in barcode reader. **Firefox (the target browser) has none**, so this library is essential there.
+- [Tesseract.js](https://github.com/naptha/tesseract.js) (Apache 2.0), text recognition for catalogue numbers, loaded only when **Cat. no.** is used.
 
-It is **hosted in the repository** (`vendor/`), together with the WebAssembly file of the ZXing engine it uses: the page loads no script or file from any third-party server, which in particular protects the Discogs token. Versions, licences, checksums and update procedure: see [`vendor/README.md`](vendor/README.md).
+Both are **hosted in the repository** (`vendor/`), with their WebAssembly engines and data: the page loads no script or file from any third-party server, which in particular protects the Discogs token. Versions, licences, checksums and update procedure: see [`vendor/README.md`](vendor/README.md).
 
 ## Licence
 

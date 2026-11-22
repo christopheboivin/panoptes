@@ -32,7 +32,7 @@ A personal web application to catalogue a collection of vinyl records and CDs: s
   - `schemaVersion` stays 1 (`groupId` is optional; no older app version is in use).
   - Later: per-copy details (condition, purchase date, price, notes), “group by album” view.
 
-## Current state (v0.4.0)
+## Current state (v0.5.0)
 
 - **Live at <https://christopheboivin.github.io/panoptes/>**, repository <https://github.com/christopheboivin/panoptes>
   (public, MIT licence, first commit `522cde0`).
@@ -47,7 +47,7 @@ A personal web application to catalogue a collection of vinyl records and CDs: s
 - **Discogs tested and validated in Firefox** by the user (22 November 2026): barcode and catalogue number.
 - barcode-detector 2.2.5 and its zxing_reader.wasm file (zxing-wasm 1.2.7) are **hosted in `vendor/`**:
   no more requests to jsDelivr. Loading of the .wasm file checked under Node.
-- 64 unit tests (`npm test` with Node.js, or `deno test --allow-all tests/`: Deno is installed on the PC, Node is not).
+- 75 unit tests (`npm test` with Node.js, or `deno test --allow-all tests/`: Deno is installed on the PC, Node is not).
 - Whole project translated into English (interface, messages, comments, tests, documentation) on 22 November 2026;
   the IndexedDB data, the export format and the Discogs token storage are unchanged.
 - **v0.3.0** (22 November 2026): camera always released (dialog closed during start-up, video error),
@@ -60,6 +60,16 @@ A personal web application to catalogue a collection of vinyl records and CDs: s
     barcode “Other editions…” open the picker. Checked in the preview at 375 px against the real MusicBrainz.
   - Not checked in a browser: the Discogs picker (no token in the preview; covered by unit tests on recorded
     responses). Discogs versions carry no barcode.
+- **v0.5.0** (22 November 2026): **catalogue-number OCR, step 1** (an extra mode, barcode scan unchanged).
+  - Tesseract.js 7.0.0 hosted in `vendor/tesseract/` (SIMD + LSTM engine only, English data `4.0.0_best_int`,
+    about 7 MB downloaded once); `scanner/ocr-engine.js`, `scanner/ocr-scan.js`, `scanner/frame.js`, `models/catno.js`.
+  - “Cat. no.” button: wide frame (vertical with “↻ Spine”, both reading directions tried), only the framed area
+    is read (~1 per second), suggestions as large buttons; a valid barcode in the frame is offered as a barcode.
+    The chosen number goes into its field, nothing is searched before “Search”; “I own it…” then opens the picker
+    filtered on that number.
+  - Checked in the preview at 375 px with a simulated camera (drawn images): back cover and spine read correctly,
+    decoy words outside the frame ignored, no CDN request, picker narrowed from 138 to 4 editions on “CL 1355”.
+  - **Not checked**: a real camera and real records. That is the purpose of step 1.
 - **Not yet tested**: camera scanning and “from a photo” with the hosted library, in Firefox on desktop and on Android.
 
 ## Discogs token (decided 22 November 2026)
@@ -79,12 +89,14 @@ Discogs finds them.
 
 ## Next steps, in order
 
-1. **User tests v0.4.0 on the phone** (see `TESTING.md`, “Edition picker”), including an album found on Discogs.
-2. **Test on the live site**: scanning in Firefox on desktop and Android (camera over HTTPS, hosted
-   barcode-detector), and check (F12, Network tab) that no request goes to jsdelivr.net.
+1. **User tests the catalogue-number OCR on 15–20 real records** (see `TESTING.md`, “Catalogue-number
+   reading”): back covers, spines, CDs, vinyl labels, low light. Then decide:
+2. **OCR step 2** (if reliable enough): OCR becomes the default way to add; the barcode scan moves to a small
+   camera icon inside the Barcode field (an icon rather than “on tap”, so the field can still be typed in).
+   Possible adjustments depending on the results: frame size, suggestion rules, image processing.
+3. **Test on the live site**: v0.4.0 edition picker (including an album found on Discogs), scanning in Firefox
+   on desktop and Android, and check (F12, Network tab) that no request goes to jsdelivr.net.
    On each new device, re-enter the Discogs token and import an export if needed.
-3. **Cover OCR** with Tesseract.js (Apache 2.0, runs in the browser), aimed mainly at the back cover, the spine
-   or the centre label to read the catalogue number and the label. To be plugged into `js/identify/cover.js`.
    Tesseract.js can be fetched via npm (reachable from Claude's workspace).
 
 ## Environment and conventions

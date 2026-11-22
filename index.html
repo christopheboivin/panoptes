@@ -75,9 +75,10 @@
 
     <div id="search-view">
       <div class="add-modes">
-        <button type="button" class="btn" id="start-scan">Scan</button>
+        <button type="button" class="btn" id="start-scan" aria-label="Scan a barcode">Barcode</button>
+        <button type="button" class="btn" id="start-ocr" aria-label="Read a catalogue number with the camera">Cat. no.</button>
         <label class="btn btn--ghost">
-          From a photo
+          Photo
           <input type="file" id="photo" accept="image/*" capture="environment" class="visually-hidden">
         </label>
       </div>
@@ -86,6 +87,19 @@
         <video id="scan-video" playsinline muted></video>
         <div class="scanner__frame" aria-hidden="true"></div>
         <button type="button" class="btn btn--small" id="stop-scan">Stop</button>
+      </div>
+
+      <div class="ocr" id="ocr" hidden>
+        <div class="scanner ocr__camera">
+          <video id="ocr-video" playsinline muted></video>
+          <div class="ocr__frame" id="ocr-frame" aria-hidden="true"></div>
+        </div>
+        <div class="ocr__tools">
+          <button type="button" class="btn btn--small btn--ghost" id="ocr-rotate" aria-pressed="false">↻ Spine</button>
+          <button type="button" class="btn btn--small" id="stop-ocr">Stop</button>
+        </div>
+        <p class="ocr__read" id="ocr-read" aria-live="polite"></p>
+        <div class="ocr__suggestions" id="ocr-suggestions"></div>
       </div>
 
       <form id="search-form" class="search">

@@ -3,7 +3,7 @@
  * Business logic lives in storage/, providers/, identify/ and scanner/.
  */
 
-import { APP_VERSION, DISCOGS_TOKEN_PAGE } from './config.js';
+import { APP_VERSION, DISCOGS_TOKEN_PAGE, OCR_MIN_CONFIDENCE } from './config.js';
 import * as db from './storage/db.js';
 import { createLibrary, STATUS } from './storage/library.js';
 import { createSettings } from './storage/settings.js';
@@ -17,9 +17,12 @@ import { createCatalog } from './providers/catalog.js';
 import { isValidBarcode, normalizeBarcode } from './models/barcode.js';
 import { identifyImage, hasImageIdentifiers } from './identify/index.js';
 import { startLiveScan } from './scanner/camera.js';
+import { startLiveOcr } from './scanner/ocr-scan.js';
+import { onOcrProgress, releaseOcr } from './scanner/ocr-engine.js';
+import { extractCatalogNumbers } from './models/catno.js';
 import { readBarcodeFromImage } from './scanner/barcode-engine.js';
 import {
-  renderLibrary, renderCandidates, renderAlbums, renderEditions, renderFilterOptions,
+  renderLibrary, renderCandidates, renderAlbums, renderEditions, renderFilterOptions, renderOcrSuggestions,
 } from './ui/render.js';
 
 const library = createLibrary(db);
@@ -48,7 +51,12 @@ const state = {
   picker: null,
   /** Scroll position of the results, restored when leaving the picker. */
   resultsScroll: 0,
+  /** Stops the camera in use (barcode or catalogue-number reading), or null. */
   stopScan: null,
+  /** Catalogue-number reading: vertical frame (spine)? */
+  ocrVertical: false,
+  /** Last suggestions shown: { catalogNumbers, barcode } (see models/catno.js). */
+  ocrSuggestions: { catalogNumbers: [], barcode: '' },
 };
 
 const $ = (id) => document.getElementById(id);
@@ -74,6 +82,12 @@ const els = {
   pickerText: $('picker-text'),
   pickerStatus: $('picker-status'),
   pickerList: $('picker-list'),
+  ocr: $('ocr'),
+  ocrVideo: $('ocr-video'),
+  ocrFrame: $('ocr-frame'),
+  ocrRotate: $('ocr-rotate'),
+  ocrRead: $('ocr-read'),
+  ocrSuggestions: $('ocr-suggestions'),
 };
 
 /* ---------- Display ---------- */
@@ -262,11 +276,14 @@ async function searchByBarcode(code) {
  */
 let scanSession = 0;
 
+/** Stops the camera, whichever reading (barcode or catalogue number) uses it. */
 function stopScanning() {
   scanSession += 1;
   state.stopScan?.();
   state.stopScan = null;
   els.scanner.hidden = true;
+  els.ocr.hidden = true;
+  onOcrProgress(null);
 }
 
 async function startScanning() {
@@ -294,6 +311,90 @@ async function startScanning() {
   }
 }
 
+/* ---------- Catalogue-number reading (OCR) ---------- */
+
+/** Position of the on-screen frame in the video box, read before each OCR reading. */
+function ocrFrameGeometry() {
+  const box = els.ocrVideo.getBoundingClientRect();
+  const frame = els.ocrFrame.getBoundingClientRect();
+  return {
+    box: { width: box.width, height: box.height },
+    frame: { x: frame.left - box.left, y: frame.top - box.top, width: frame.width, height: frame.height },
+    vertical: state.ocrVertical,
+  };
+}
+
+/**
+ * Shows what the last reading saw and, when it is confident enough, the
+ * catalogue numbers found. Suggestions are kept until better ones arrive, and
+ * only redrawn when they change (a redraw under the finger would lose the tap).
+ */
+function showOcrReading({ text, confidence }) {
+  const line = text.replace(/\s+/g, ' ').trim();
+  els.ocrRead.textContent = line ? `Read: ${line}` : 'Nothing readable in the frame yet.';
+  if (confidence < OCR_MIN_CONFIDENCE) return;
+  const found = extractCatalogNumbers(text);
+  if (found.catalogNumbers.length === 0 && !found.barcode) return;
+  if (JSON.stringify(found) === JSON.stringify(state.ocrSuggestions)) return;
+  state.ocrSuggestions = found;
+  els.ocrSuggestions.innerHTML = renderOcrSuggestions(found);
+}
+
+async function startOcr() {
+  stopScanning();
+  const session = scanSession;
+  state.ocrSuggestions = { catalogNumbers: [], barcode: '' };
+  els.ocrSuggestions.innerHTML = '';
+  els.ocrRead.textContent = 'Preparing the text reader…';
+  els.ocr.hidden = false;
+  setStatus('');
+  onOcrProgress((status, progress) => {
+    if (session !== scanSession) return;
+    els.ocrRead.textContent = `Preparing the text reader (about 7 MB the first time)… ${Math.round(progress * 100)}%`;
+  });
+  try {
+    const stop = await startLiveOcr(els.ocrVideo, {
+      getFrame: ocrFrameGeometry,
+      onRead: (reading) => {
+        if (session === scanSession) showOcrReading(reading);
+      },
+    });
+    onOcrProgress(null);
+    if (session !== scanSession) {
+      stop(); // cancelled while the reader or the camera was starting
+      return;
+    }
+    state.stopScan = stop;
+    els.ocrRead.textContent = 'Fit the catalogue number in the frame; tap it below when it appears.';
+  } catch (error) {
+    onOcrProgress(null);
+    if (session !== scanSession) return;
+    els.ocr.hidden = true;
+    setStatus(error.message, 'warn');
+  }
+}
+
+function toggleOcrRotation() {
+  state.ocrVertical = !state.ocrVertical;
+  els.ocr.classList.toggle('ocr--vertical', state.ocrVertical);
+  els.ocrRotate.setAttribute('aria-pressed', String(state.ocrVertical));
+}
+
+/**
+ * Confirmation step, as for barcodes: the catalogue number chosen among the
+ * suggestions goes into its field, and nothing is searched until the user
+ * confirms (it can still be corrected).
+ */
+function proposeCatalogNumber(catno) {
+  cancelSearch();
+  state.candidates = [];
+  renderCandidateList();
+  els.searchForm.elements.catno.value = catno;
+  navigator.vibrate?.(80);
+  setStatus(`Catalogue number read: ${catno}. Check it against the record, then press “Search”.`, 'ok');
+  els.searchForm.querySelector('button[type="submit"]').focus();
+}
+
 /* ---------- Edition picker ---------- */
 
 /** Shows the picker instead of the search (or back), keeping the results' scroll position. */
@@ -312,10 +413,12 @@ async function openPicker(album) {
   stopScanning();
   cancelSearch();
   const id = searchId;
-  state.picker = { album, editions: [], filters: { format: '', country: '', text: '' }, loading: true, error: '' };
+  // A catalogue number searched for (typed or read by OCR) preselects the matching editions.
+  const catno = els.searchForm.elements.catno.value.trim();
+  state.picker = { album, editions: [], filters: { format: '', country: '', text: catno }, loading: true, error: '' };
   els.pickerTitle.textContent = album.title;
   els.pickerArtist.textContent = [album.artist, catalog.sourceName(album)].filter(Boolean).join(' · ');
-  els.pickerText.value = '';
+  els.pickerText.value = catno;
   showPicker(true);
   renderPicker();
   try {
@@ -366,7 +469,9 @@ function renderPicker() {
     ? `${picker.error}${total ? ` (${total} editions loaded)` : ''}`
     : picker.loading
       ? `Loading editions… ${total} so far.`
-      : total === 0 ? 'No edition found for this album.' : `${shown}. Compare with the label, the spine or the back cover.`;
+      : total === 0 ? 'No edition found for this album.'
+        : visible.length === 0 ? `No edition matches these filters: clear them to see all ${total}.`
+          : `${shown}. Compare with the label, the spine or the back cover.`;
 }
 
 /**
@@ -526,10 +631,22 @@ function bindEvents() {
     if (els.dialog.open) return;
     stopScanning();
     cancelSearch(); // stops loading editions or results nobody will see
+    releaseOcr(); // the text reader holds a lot of memory
   });
 
   $('start-scan').addEventListener('click', startScanning);
   $('stop-scan').addEventListener('click', () => { stopScanning(); setStatus(''); });
+
+  $('start-ocr').addEventListener('click', startOcr);
+  $('stop-ocr').addEventListener('click', () => { stopScanning(); setStatus(''); });
+  els.ocrRotate.addEventListener('click', toggleOcrRotation);
+  els.ocrSuggestions.addEventListener('click', (event) => {
+    const button = event.target.closest('button');
+    if (!button) return;
+    stopScanning();
+    if (button.dataset.barcode) proposeBarcode(button.dataset.barcode);
+    else if (button.dataset.catno) proposeCatalogNumber(button.dataset.catno);
+  });
 
   $('photo').addEventListener('change', (event) => {
     const [file] = event.target.files;

@@ -54,8 +54,12 @@ Camera scanning cannot be tested by an agent: use the checklist in `TESTING.md` 
   yielding pages. `catalog.js` queries them in order (MusicBrainz first), stops at the first with results, and
   routes `listEditions` to the album's own source. `throttle.js` spaces out requests.
   Real responses for tests are in `tests/fixtures/`.
-- `js/scanner/`: barcode reading (native `BarcodeDetector`, else `vendor/barcode-detector`) and live camera scan.
-- `js/identify/`: extension point for recognising a cover from a photo (planned: OCR in `cover.js`).
+- `js/scanner/`: camera (`camera.js`, `openCamera` shared by both readings), barcode reading (native
+  `BarcodeDetector`, else `vendor/barcode-detector`), catalogue-number OCR (`ocr-engine.js`: Tesseract.js from
+  `vendor/tesseract/`, one worker released when the Add dialog closes; `ocr-scan.js`: reads only the on-screen
+  frame; `frame.js`: pure geometry). Suggestions from OCR text: `js/models/catno.js`. The preview has no camera:
+  test OCR with a canvas `captureStream()` standing in for `getUserMedia`.
+- `js/identify/`: extension point for recognising a cover from a photo.
 - `js/ui/render.js`: pure HTML generation. The app is mainly used **on a smartphone**: design for ~375 px
   first (44 px touch targets, compact rows, filters that stay visible), check at 375 px in the preview.
 - `tests/`: `node:test` unit tests; inject fakes (storage, `fetchFn`) rather than touching the network.
@@ -66,5 +70,6 @@ Camera scanning cannot be tested by an agent: use the checklist in `TESTING.md` 
 - Keep pure functions (normalisation, validation, rendering) separate from I/O so they can be tested.
 - New modules get a header comment stating their role and contract.
 - Add or update tests with every change to `models/`, `storage/` or `providers/`.
-- Do not read `vendor/barcode-detector/pure.js` or the `.wasm` file: generated third-party code.
+- Do not read `vendor/barcode-detector/pure.js`, the `.wasm` file or `vendor/tesseract/*.js|*.gz`:
+  generated third-party code and data.
 - Bump `APP_VERSION` in `js/config.js` and `version` in `package.json` together, and update `CHANGELOG.md`.

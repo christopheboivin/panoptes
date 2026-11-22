@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   escapeHtml, candidateHints, recordHints, renderCandidates, renderLibrary, renderAlbums, renderEditions,
-  renderFilterOptions,
+  renderFilterOptions, renderOcrSuggestions,
 } from '../js/ui/render.js';
 import { MATCH } from '../js/models/match.js';
 import { STATUS } from '../js/models/record.js';
@@ -79,4 +79,12 @@ test('renderFilterOptions keeps the selected value', () => {
   const html = renderFilterOptions('All formats', [{ value: 'Vinyl', count: 3 }, { value: 'CD', count: 1 }], 'CD');
   assert.match(html, /<option value="">All formats<\/option>/);
   assert.match(html, /<option value="CD" selected>CD \(1\)<\/option>/);
+});
+
+test('renderOcrSuggestions: one button per catalogue number, and the barcode', () => {
+  const html = renderOcrSuggestions({ catalogNumbers: ['PGLP 21', 'PGLP21'], barcode: '0724384960650' });
+  assert.match(html, /data-catno="PGLP 21">PGLP 21</);
+  assert.match(html, /data-catno="PGLP21">/);
+  assert.match(html, /data-barcode="0724384960650">Barcode 0724384960650</);
+  assert.equal(renderOcrSuggestions({ catalogNumbers: ['<b>'], barcode: '' }).includes('<b>'), false);
 });

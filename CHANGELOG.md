@@ -4,6 +4,22 @@ Format: [Keep a Changelog](https://keepachangelog.com/). Versions follow `APP_VE
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-11-22
+
+### Added
+- **Catalogue-number reading with the camera (OCR)**: the new **Cat. no.** button reads the text inside a wide
+  frame about once a second and offers the catalogue numbers found as large buttons; **↻ Spine** turns the frame
+  vertical for spines. The number chosen goes into its field, then nothing is searched before **Search**; a valid
+  barcode inside the frame is offered as a barcode. Runs entirely on the phone with Tesseract.js 7.0.0, hosted in
+  `vendor/tesseract/` (about 7 MB, downloaded the first time only).
+- After a catalogue-number search, **I own it…** opens the edition picker already filtered on that number.
+- `models/catno.js` (suggestions from OCR text) and `scanner/frame.js` (frame geometry), with tests.
+
+### Changed
+- The add buttons are now **Barcode**, **Cat. no.** and **Photo**.
+- `scanner/camera.js`: opening the camera (`openCamera`) is shared by the barcode and catalogue-number readings.
+- The edition picker says when its filters leave no edition.
+
 ## [0.4.0] - 2026-11-22
 
 ### Added

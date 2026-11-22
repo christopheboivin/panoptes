@@ -8,12 +8,27 @@ and note the date, browser and device in `NOTES.md`.
 
 - [ ] The page loads with no error in the console (F12).
 - [ ] Network tab: no request to a CDN (jsdelivr.net, unpkg.com…). Only musicbrainz.org, api.discogs.com,
-      coverartarchive.org / archive.org and i.discogs.com.
-- [ ] **Scan**: the camera opens (rear camera on a phone), reads an EAN-13 barcode, shows “check digit OK”,
+      coverartarchive.org / archive.org and i.discogs.com. Also after using **Cat. no.** (Tesseract).
+- [ ] **Barcode**: the camera opens (rear camera on a phone), reads an EAN-13 barcode, shows “check digit OK”,
       and searches nothing until “Search” is pressed.
 - [ ] **Stop** and closing the dialog turn the camera off (the browser's camera indicator disappears).
 - [ ] Closing the dialog while the camera permission prompt is still open: the camera does not stay on.
 - [ ] **From a photo**: a photo of a barcode fills in the code; a photo without one shows a clear message.
+
+## Catalogue-number reading (on the phone, Firefox and Chrome)
+
+- [ ] First use: “Preparing the text reader… %” then the camera; second use (even offline): immediate.
+- [ ] Back cover (printed straight): the number appears as a suggestion within a few seconds.
+- [ ] Spine: **↻ Spine** turns the frame vertical; spines read top-to-bottom and bottom-to-top both work.
+- [ ] CD: back insert, spine.
+- [ ] Vinyl centre label (small or curved print): note what works and what does not.
+- [ ] Low light, glossy sleeve, slightly tilted record.
+- [ ] Words around the number (“STEREO”, label name) are not offered.
+- [ ] A barcode inside the frame is offered as **Barcode …**.
+- [ ] Tapping a suggestion stops the camera, fills **Catalogue number**, searches nothing before **Search**.
+- [ ] **I own it…** then opens the picker already filtered on that number.
+- [ ] **Stop** and closing the dialog turn the camera off; the phone stays responsive (memory released).
+- [ ] For each record tried, note: where the number is, read or not, time taken, wrong characters (O/0, I/1…).
 
 ## Search and library (one browser is enough)
 

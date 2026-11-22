@@ -1,3 +1,4 @@
 * text=auto eol=lf
 *.wasm binary
+*.gz binary
 vendor/** linguist-vendored -diff

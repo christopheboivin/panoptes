@@ -1,6 +1,6 @@
 /**
- * Real-time scanning: opens the rear camera and analyses frames regularly
- * until a barcode is detected.
+ * Camera: opens the rear camera in a <video> element, and real-time barcode
+ * scanning on top of it (see ocr-scan.js for catalogue numbers).
  */
 
 import { SCAN_INTERVAL_MS } from '../config.js';
@@ -16,26 +16,49 @@ function cameraErrorMessage(error) {
 }
 
 /**
- * Starts scanning in the given <video> element.
+ * Opens the rear camera and shows it in the given <video> element.
  * @param {HTMLVideoElement} video
- * @param {(code: string) => void} onCode - called once, with the first code read
- * @returns {Promise<() => void>} stop function (to be called in every case)
+ * @param {MediaTrackConstraints} [constraints] - added to the default ones (e.g. a higher resolution)
+ * @returns {Promise<() => void>} stop function, to be called in every case (several calls are harmless)
  */
-export async function startLiveScan(video, onCode) {
+export async function openCamera(video, constraints = {}) {
   if (!navigator.mediaDevices?.getUserMedia) {
     throw new Error('This browser cannot use the camera (an HTTPS address is required).');
   }
-  await getDetector(); // fails early if no reader is available
-
   let stream;
   try {
     stream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: { ideal: 'environment' } },
+      video: { facingMode: { ideal: 'environment' }, ...constraints },
       audio: false,
     });
   } catch (error) {
     throw new Error(cameraErrorMessage(error));
   }
+
+  const stop = () => {
+    stream.getTracks().forEach((track) => track.stop());
+    if (video.srcObject === stream) video.srcObject = null;
+  };
+
+  video.srcObject = stream;
+  try {
+    await video.play();
+  } catch (error) {
+    stop(); // do not leave the camera on
+    throw new Error(`Cannot display the camera: ${error?.message ?? error}`);
+  }
+  return stop;
+}
+
+/**
+ * Starts barcode scanning in the given <video> element.
+ * @param {HTMLVideoElement} video
+ * @param {(code: string) => void} onCode - called once, with the first code read
+ * @returns {Promise<() => void>} stop function (to be called in every case)
+ */
+export async function startLiveScan(video, onCode) {
+  await getDetector(); // fails early if no reader is available
+  const closeCamera = await openCamera(video);
 
   let active = true;
   let timer = null;
@@ -43,8 +66,7 @@ export async function startLiveScan(video, onCode) {
   const stop = () => {
     active = false;
     clearTimeout(timer);
-    stream.getTracks().forEach((track) => track.stop());
-    video.srcObject = null;
+    closeCamera();
   };
 
   const tick = async () => {
@@ -64,13 +86,6 @@ export async function startLiveScan(video, onCode) {
     timer = setTimeout(tick, SCAN_INTERVAL_MS);
   };
 
-  video.srcObject = stream;
-  try {
-    await video.play();
-  } catch (error) {
-    stop(); // do not leave the camera on
-    throw new Error(`Cannot display the camera: ${error?.message ?? error}`);
-  }
   tick();
   return stop;
 }

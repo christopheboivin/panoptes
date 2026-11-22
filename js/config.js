@@ -1,6 +1,6 @@
 /** Centralised application settings. */
 
-export const APP_VERSION = '0.4.0';
+export const APP_VERSION = '0.5.0';
 
 /**
  * Fallback barcode reading engine, loaded only when the browser has no
@@ -19,6 +19,26 @@ export const BARCODE_FORMATS = ['ean_13', 'ean_8', 'upc_a', 'upc_e'];
 
 /** Interval between two analyses of a camera frame (ms). */
 export const SCAN_INTERVAL_MS = 250;
+
+/**
+ * Text recognition (OCR) of catalogue numbers: Tesseract.js, hosted in the
+ * repository (see vendor/README.md). The engine file is given exactly, so
+ * Tesseract neither picks another build nor downloads anything from its CDN.
+ */
+export const TESSERACT_URL = new URL('../vendor/tesseract/tesseract.esm.min.js', import.meta.url).href;
+export const TESSERACT_WORKER_URL = new URL('../vendor/tesseract/worker.min.js', import.meta.url).href;
+export const TESSERACT_CORE_URL = new URL('../vendor/tesseract/tesseract-core-simd-lstm.wasm.js', import.meta.url).href;
+/** Folder holding eng.traineddata.gz. */
+export const TESSERACT_LANG_URL = new URL('../vendor/tesseract', import.meta.url).href;
+
+/** The only characters OCR may recognise: those of catalogue numbers. */
+export const CATNO_CHARACTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 -./';
+
+/** Minimum interval between two OCR readings of the camera frame (ms). */
+export const OCR_INTERVAL_MS = 700;
+
+/** Below this confidence (0–100), a reading is shown but offers no suggestion. */
+export const OCR_MIN_CONFIDENCE = 50;
 
 export const MUSICBRAINZ_API = 'https://musicbrainz.org/ws/2';
 export const COVER_ART_API = 'https://coverartarchive.org';
