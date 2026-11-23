@@ -12,13 +12,14 @@ function fakeProvider(name, { configured = true, results = [], error = null } = 
   return { name, calls, isConfigured: () => configured, searchByBarcode: search, searchByText: search };
 }
 
-test('stops at the first source that finds a result', async () => {
+test('combines results from every source that finds one', async () => {
   const first = fakeProvider('MusicBrainz', { results: [{ title: 'A' }] });
   const second = fakeProvider('Discogs', { results: [{ title: 'B' }] });
   const result = await createCatalog([first, second]).searchByBarcode('123');
-  assert.equal(result.providerName, 'MusicBrainz');
-  assert.equal(result.candidates[0].title, 'A');
-  assert.equal(second.calls.length, 0);
+  assert.equal(result.providerName, 'MusicBrainz + Discogs');
+  assert.deepEqual(result.candidates.map(({ title }) => title), ['A', 'B']);
+  assert.equal(first.calls.length, 1);
+  assert.equal(second.calls.length, 1);
 });
 
 test('moves on to the next source when the first finds nothing', async () => {
@@ -43,6 +44,7 @@ test('an error does not stop the next source from answering', async () => {
   const second = fakeProvider('Discogs', { results: [{ title: 'B' }] });
   const result = await createCatalog([first, second]).searchByBarcode('123');
   assert.equal(result.providerName, 'Discogs');
+  assert.deepEqual(result.candidates.map(({ title }) => title), ['B']);
   assert.equal(result.errors.length, 1);
 });
 
