@@ -4,6 +4,12 @@ Format: [Keep a Changelog](https://keepachangelog.com/). Versions follow `APP_VE
 
 ## [Unreleased]
 
+## [0.9.1] - 2026-11-23
+
+### Fixed
+- A catalog that does not answer no longer holds back the results of the other (issue #3): each request
+  now fails after 15 s (`REQUEST_TIMEOUT_MS`), and the status line warns that the source did not answer.
+
 ## [0.9.0] - 2026-11-23
 
 ### Changed

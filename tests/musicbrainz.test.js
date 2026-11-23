@@ -95,3 +95,14 @@ test('a persistent 503 gives an explicit message', async () => {
   });
   await assert.rejects(musicbrainz.searchByText({ artist: 'X' }), /rate limit/);
 });
+
+test('a request that never answers fails after the timeout', async () => {
+  const musicbrainz = createMusicBrainzProvider({
+    // Never answers; rejects like fetch() when the signal aborts.
+    fetchFn: (url, { signal }) => new Promise((resolve, reject) => {
+      signal.addEventListener('abort', () => reject(signal.reason));
+    }),
+    timeoutMs: 10,
+  });
+  await assert.rejects(musicbrainz.searchByText({ artist: 'X' }), /did not answer in time/);
+});

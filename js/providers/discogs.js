@@ -12,6 +12,7 @@
 
 import {
   DISCOGS_API, DISCOGS_MIN_DELAY_MS, SEARCH_LIMIT, EDITIONS_PAGE_SIZE, MAX_EDITION_PAGES,
+  REQUEST_TIMEOUT_MS,
 } from '../config.js';
 import { createThrottle } from './throttle.js';
 
@@ -123,8 +124,11 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
  * @param {() => string} options.getToken - returns the personal token (empty string if none)
  * @param {typeof fetch} [options.fetchFn] - replaceable in tests
  * @param {(ms: number) => Promise<void>} [options.sleepFn] - replaceable in tests
+ * @param {number} [options.timeoutMs] - request timeout, replaceable in tests
  */
-export function createDiscogsProvider({ getToken, fetchFn = (...args) => fetch(...args), sleepFn = sleep }) {
+export function createDiscogsProvider({
+  getToken, fetchFn = (...args) => fetch(...args), sleepFn = sleep, timeoutMs = REQUEST_TIMEOUT_MS,
+}) {
   const throttle = createThrottle(DISCOGS_MIN_DELAY_MS, { sleep: sleepFn });
 
   /** Discogs answers 429 when the rate limit is reached: retry a little later. */
@@ -132,7 +136,9 @@ export function createDiscogsProvider({ getToken, fetchFn = (...args) => fetch(.
     let response;
     for (let attempt = 0; ; attempt += 1) {
       await throttle();
-      response = await fetchFn(url);
+      response = await fetchFn(url, { signal: AbortSignal.timeout(timeoutMs) }).catch((error) => {
+        throw error.name === 'TimeoutError' ? new Error('Discogs did not answer in time.') : error;
+      });
       if (response.status !== 429 || attempt >= RETRY_DELAYS_MS.length) break;
       await sleepFn(RETRY_DELAYS_MS[attempt]);
     }

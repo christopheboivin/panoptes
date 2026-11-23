@@ -1,6 +1,6 @@
 /** Centralised application settings. */
 
-export const APP_VERSION = '0.9.0';
+export const APP_VERSION = '0.9.1';
 
 /**
  * Fallback barcode reading engine, loaded only when the browser has no
@@ -39,6 +39,12 @@ export const OCR_INTERVAL_MS = 700;
 
 /** Below this confidence (0–100), a reading is shown but offers no suggestion. */
 export const OCR_MIN_CONFIDENCE = 50;
+
+/**
+ * A catalog request that takes longer fails, so that a source that hangs does
+ * not hold back the results of the others (issue #3).
+ */
+export const REQUEST_TIMEOUT_MS = 15000;
 
 export const MUSICBRAINZ_API = 'https://musicbrainz.org/ws/2';
 export const COVER_ART_API = 'https://coverartarchive.org';
