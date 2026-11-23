@@ -84,6 +84,17 @@ test('renderAlbums: “I own it…” when the editions can be listed, direct ad
   assert.match(single, /1959 · CD/);
 });
 
+test('each result shows its own source, as results can come from several', () => {
+  const album = { title: 'Kind of Blue', artist: 'Miles Davis', coverUrls: [] };
+  const albums = renderAlbums([
+    { album, editionCount: 1, relations: none, canPick: true, sourceName: 'MusicBrainz' },
+    { album, editionCount: 1, relations: none, canPick: true, sourceName: 'Discogs' },
+  ]);
+  assert.match(albums, /Source: MusicBrainz[\s\S]*Source: Discogs/);
+  assert.match(renderCandidates([{ candidate: album, relations: none, sourceName: '<b>' }]), /Source: &lt;b&gt;/);
+  assert.doesNotMatch(renderCandidates([{ candidate: album, relations: none }]), /Source:/);
+});
+
 test('renderEditions: compact rows keeping the index in the full list', () => {
   const edition = { year: '1959', country: 'US', format: '12" Vinyl', label: 'Columbia', catno: 'CL 1355', barcode: '', coverUrls: [] };
   const html = renderEditions([{ edition, index: 7, relations: none }]);

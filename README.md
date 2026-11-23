@@ -12,7 +12,7 @@ Target browser: **Firefox** (desktop and Android). Chrome also works; Safari/iPh
 - Real-time barcode scanning with the camera (**Barcode**), or from a photo (**Photo**). The scanned code is displayed together with the result of its check-digit validation; nothing is looked up until the user confirms.
 - **Catalogue-number reading** with the camera (**Cat. no.**), for records without a barcode: fit the number printed on the back cover or the spine (**↻ Spine**) in the frame and tap it among the suggestions. Text recognition runs on the phone (Tesseract.js, about 7 MB downloaded the first time); nothing is looked up until the user confirms.
 - Manual search by barcode, artist, title or catalogue number (e.g. PGLP21, useful for older records without a barcode).
-- Two data sources, queried in order: [MusicBrainz](https://musicbrainz.org), then [Discogs](https://www.discogs.com) if MusicBrainz finds nothing (Discogs has far better coverage of vinyl). The source of each result is shown.
+- Two data sources, both queried on every search: [MusicBrainz](https://musicbrainz.org) and [Discogs](https://www.discogs.com) (far better coverage of vinyl). Their results are shown together, MusicBrainz first, vinyl at the top; each result shows its source.
 - If no source knows the barcode, search by artist, title or catalogue number instead: the scanned code is then saved with the record you pick.
 - Two lists: **Collection** (one entry per physical copy, with its edition: country, label, catalogue number…) and **Wishlist** (albums, wanted on vinyl by default). One export file holds both lists.
 - **Shopping list**: the Wishlist saved as an HTML page, with search links per album to Fnac, Cultura and Amazon (France).
@@ -74,7 +74,7 @@ js/
   storage/db.js             IndexedDB access (the only module that knows about it)
   storage/library.js        Business rules: add, change status, export/import
   storage/settings.js       Per-device settings (Discogs token), never exported
-  providers/catalog.js      Queries the sources in order, stops at the first result
+  providers/catalog.js      Queries every configured source at once, joins their results
   providers/throttle.js     Minimum delay between two requests to a source
   providers/musicbrainz.js  MusicBrainz source: search and normalisation
   providers/discogs.js      Discogs source (personal token required)

@@ -19,7 +19,8 @@ A personal web application to catalogue a collection of vinyl records and CDs: s
 - **Confirmation before searching**: the scanned code is shown with its check-digit result; nothing is looked up until the user confirms.
 - **Hosting: GitHub Pages** (HTTPS is required for the camera). The repository only contains the code, never the library.
 - **Everything in English**: user interface, messages, code comments, tests and documentation (decided 22 November 2026).
-- **MusicBrainz stays the first source** (open data), Discogs second (decided 22 November 2026). The local
+- **MusicBrainz stays the first source** (open data), Discogs second (decided 22 November 2026). Since 0.9.0 both
+  are queried on every search and their results joined (issue #1: MusicBrainz lacks many vinyl pressings). The local
   database is the truth for the collection: records are snapshots, never refreshed from the sources.
 - **Uniqueness** (decided 22 November 2026):
   - A Collection record is **one physical copy** of an edition. Several copies and several editions are allowed;

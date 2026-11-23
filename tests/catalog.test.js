@@ -12,20 +12,21 @@ function fakeProvider(name, { configured = true, results = [], error = null } = 
   return { name, calls, isConfigured: () => configured, searchByBarcode: search, searchByText: search };
 }
 
-test('stops at the first source that finds a result', async () => {
+test('a barcode search joins the results of every source, in their order', async () => {
   const first = fakeProvider('MusicBrainz', { results: [{ title: 'A' }] });
-  const second = fakeProvider('Discogs', { results: [{ title: 'B' }] });
+  const second = fakeProvider('Discogs', { results: [{ title: 'B' }, { title: 'C' }] });
   const result = await createCatalog([first, second]).searchByBarcode('123');
-  assert.equal(result.providerName, 'MusicBrainz');
-  assert.equal(result.candidates[0].title, 'A');
-  assert.equal(second.calls.length, 0);
+  assert.equal(result.providerName, 'MusicBrainz and Discogs');
+  assert.deepEqual(result.candidates.map((c) => c.title), ['A', 'B', 'C']);
+  assert.deepEqual(second.calls, ['123']);
 });
 
-test('moves on to the next source when the first finds nothing', async () => {
+test('a text search asks every source, and names only those that found something', async () => {
   const first = fakeProvider('MusicBrainz');
   const second = fakeProvider('Discogs', { results: [{ title: 'B' }] });
   const result = await createCatalog([first, second]).searchByText({ catno: 'PGLP21' });
   assert.equal(result.providerName, 'Discogs');
+  assert.deepEqual(first.calls, [{ catno: 'PGLP21' }]);
   assert.deepEqual(second.calls, [{ catno: 'PGLP21' }]);
 });
 
@@ -44,6 +45,7 @@ test('an error does not stop the next source from answering', async () => {
   const result = await createCatalog([first, second]).searchByBarcode('123');
   assert.equal(result.providerName, 'Discogs');
   assert.equal(result.errors.length, 1);
+  assert.deepEqual(result.failed, ['MusicBrainz']);
 });
 
 test('throws the first error if no source finds anything', async () => {
