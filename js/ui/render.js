@@ -234,12 +234,12 @@ function wishButton(relations, index) {
 /**
  * Search results shown edition by edition (barcode search: the code
  * identifies the edition).
- * @param {Array<{candidate: object, relations: object, canPick?: boolean}>} items
- *   relations: findRelations() result; canPick: its other editions can be listed
- * @param {string} [sourceName] - name of the source that provided the results
+ * @param {Array<{candidate: object, relations: object, canPick?: boolean, sourceName?: string}>} items
+ *   relations: findRelations() result; canPick: its other editions can be listed;
+ *   sourceName: name of the source that found it (results can come from several)
  */
-export function renderCandidates(items, sourceName = '') {
-  return items.map(({ candidate, relations = NO_RELATIONS, canPick = false }, index) => {
+export function renderCandidates(items) {
+  return items.map(({ candidate, relations = NO_RELATIONS, canPick = false, sourceName = '' }, index) => {
     const ownedLabel = isCertain(relations.copies) ? '+ Another copy' : '+ Collection';
     return `<li class="candidate">
     ${cover(candidate.coverUrls)}
@@ -262,13 +262,14 @@ export function renderCandidates(items, sourceName = '') {
 
 /**
  * Search results grouped by album (text search).
- * @param {Array<{album: object, editionCount: number, vinylCount: number, relations: object, canPick: boolean}>} items
+ * @param {Array<{album: object, editionCount: number, vinylCount: number, relations: object, canPick: boolean,
+ *   sourceName?: string}>} items
  *   album: one of its editions; editionCount: editions of it in the results, vinylCount: vinyl ones;
- *   canPick: its editions can be listed (otherwise the single edition is added directly)
- * @param {string} [sourceName]
+ *   canPick: its editions can be listed (otherwise the single edition is added directly);
+ *   sourceName: name of the source that found it
  */
-export function renderAlbums(items, sourceName = '') {
-  return items.map(({ album, editionCount, vinylCount = 0, relations = NO_RELATIONS, canPick }, index) => {
+export function renderAlbums(items) {
+  return items.map(({ album, editionCount, vinylCount = 0, relations = NO_RELATIONS, canPick, sourceName = '' }, index) => {
     const detail = canPick
       ? escapeHtml(`${count(editionCount, 'edition', 'editions')} in these results`)
       : metaLine(album);

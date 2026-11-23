@@ -51,7 +51,7 @@ Camera scanning cannot be tested by an agent: use the checklist in `TESTING.md` 
   Contract: `{ id, name, isConfigured, searchByBarcode, searchByText, listEditions }` returning Candidates
   `{ title, artist, year, format, label, catno, barcode, country, source: { provider, id, groupId }, coverUrls }`
   (`id`: edition, `groupId`: album, both specific to that source); `listEditions(album)` is an async generator
-  yielding pages. `catalog.js` queries them in order (MusicBrainz first), stops at the first with results, and
+  yielding pages. `catalog.js` queries all configured sources at once and joins their results (MusicBrainz first), and
   routes `listEditions` to the album's own source. `throttle.js` spaces out requests.
   Real responses for tests are in `tests/fixtures/`.
 - `js/scanner/`: camera (`camera.js`, `openCamera` shared by both readings), barcode reading (native

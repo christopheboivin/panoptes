@@ -4,6 +4,15 @@ Format: [Keep a Changelog](https://keepachangelog.com/). Versions follow `APP_VE
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-11-23
+
+### Changed
+- **Every search queries all catalogs** (issue #1): MusicBrainz and Discogs are both asked, for barcode and text
+  searches alike, and their results shown together (MusicBrainz first, vinyl at the top). Before, Discogs was
+  skipped as soon as MusicBrainz found anything, missing many vinyl pressings.
+- Each result shows its own source; the status line names every source that answered, and warns when one
+  failed while the other answered (results may be incomplete).
+
 ## [0.8.0] - 2026-11-22
 
 ### Added

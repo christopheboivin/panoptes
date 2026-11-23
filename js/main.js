@@ -46,7 +46,6 @@ const state = {
   /** Artist groups the user unfolded (models/artists.js keys); the others stay folded. */
   openArtists: new Set(),
   candidates: [],
-  candidatesSource: '',
   resultsMode: RESULTS.EDITIONS,
   /** Results grouped by album (RESULTS.ALBUMS mode): groupByAlbum(candidates). */
   albums: [],
@@ -122,16 +121,18 @@ function renderCandidateList() {
       vinylCount: countVinyl(editions),
       relations: findRelations(album, state.records),
       canPick: catalog.canListEditions(album),
+      sourceName: catalog.sourceName(album),
     }));
-    els.candidates.innerHTML = renderAlbums(items, state.candidatesSource);
+    els.candidates.innerHTML = renderAlbums(items);
     return;
   }
   const items = state.candidates.map((candidate) => ({
     candidate,
     relations: findRelations(candidate, state.records),
     canPick: catalog.canListEditions(candidate),
+    sourceName: catalog.sourceName(candidate),
   }));
-  els.candidates.innerHTML = renderCandidates(items, state.candidatesSource);
+  els.candidates.innerHTML = renderCandidates(items);
 }
 
 async function reload() {
@@ -192,7 +193,6 @@ async function runSearch(label, search, mode = RESULTS.EDITIONS) {
   cancelSearch();
   const id = searchId;
   state.candidates = [];
-  state.candidatesSource = '';
   state.resultsMode = mode;
   renderCandidateList();
   setStatus(`${label}…`);
@@ -201,13 +201,15 @@ async function runSearch(label, search, mode = RESULTS.EDITIONS) {
     if (id !== searchId) return null;
     // Vinyl first (albums with a vinyl edition too, as albums keep the order of their first edition).
     state.candidates = vinylFirst(result.candidates);
-    state.candidatesSource = result.providerName ?? '';
     renderCandidateList();
     const count = mode === RESULTS.ALBUMS ? state.albums.length : result.candidates.length;
     const noun = mode === RESULTS.ALBUMS ? 'album' : 'result';
     const where = result.providerName ? ` on ${result.providerName}` : '';
     const summary = count === 0 ? 'No record found.' : `${count} ${noun}${count > 1 ? 's' : ''}${where}.`;
-    setStatus([result.detail, summary, discogsHint(result)].filter(Boolean).join(' '));
+    const failed = result.failed?.length
+      ? `${result.failed.join(' and ')} did not answer (${result.errors[0]?.message}): results may be incomplete.`
+      : '';
+    setStatus([result.detail, summary, failed, discogsHint(result)].filter(Boolean).join(' '), failed ? 'warn' : '');
     return result;
   } catch (error) {
     if (id === searchId) setStatus(error.message, 'warn');
